@@ -54,36 +54,37 @@ namespace multivesc {
         bool stop() override;
 
         //! Set the duty cycle of the motor controller. The duty cycle is a value between -1 and 1.
-        void set_duty(uint8_t controller_id, float duty);
+        void setDuty(uint8_t controller_id, float duty) override;
 
         //! Set motor current in Amps.
-        void set_current(uint8_t controller_id, float current);
+        void setCurrent(uint8_t controller_id, float current) override;
 
         //! Set motor current in Amps with an off delay. The off delay is useful to keep the current controller running for a while even after setting currents below the minimum current.
-        void set_current_off_delay(uint8_t controller_id, float current, float off_delay);
+        void setCurrentOffDelay(uint8_t controller_id, float current, float off_delay) override;
 
         //! Set brake current in Amps.
-        void set_current_brake(uint8_t controller_id, float current);
+        void setCurrentBrake(uint8_t controller_id, float current) override;
 
         //! Set the RPM of the motor controller.
-        void set_rpm(uint8_t controller_id, float rpm);
+        void setRPM(uint8_t controller_id, float rpm) override;
 
         //! Set the position of the motor controller. The position is in turns.
-        void set_pos(uint8_t controller_id, float pos);
+        void setPos(uint8_t controller_id, float pos) override;
 
         //! Set the current of the motor controller as a percentage of the maximum current.
-        void set_current_rel(uint8_t controller_id, float current_rel);
+        void setCurrentRel(uint8_t controller_id, float current_rel) override;
 
-        /**
-         * Same as above, but also sets the off delay. Note that this command uses 6 bytes now. The off delay is useful to set to keep the current controller running for a while even after setting currents below the minimum current.
-         */
-        void set_current_rel_off_delay(uint8_t controller_id, float current_rel, float off_delay);
+        //! Same as above, but also sets the off delay. Note that this command uses 6 bytes now. The off delay is useful to set to keep the current controller running for a while even after setting currents below the minimum current.
+        void setCurrentRelOffDelay(uint8_t controller_id, float current_rel, float off_delay) override;
 
-        void set_current_brake_rel(uint8_t controller_id, float current_rel);
+        //! Set brake current in Amps as a percentage of the maximum current.
+        void setCurrentBrakeRel(uint8_t controller_id, float current_rel) override;
 
-        void set_handbrake(uint8_t controller_id, float current);
+        //! Set handbrake current in Amps.
+        void setHandbrake(uint8_t controller_id, float current) override;
 
-        void set_handbrake_rel(uint8_t controller_id, float current_rel);
+        //! Set handbrake current in Amps as a percentage of the maximum current.
+        void setHandbrakeRel(uint8_t controller_id, float current_rel) override;
 
     private:
         void can_transmit_eid(uint32_t id, const uint8_t *data, uint8_t len);
@@ -98,30 +99,10 @@ namespace multivesc {
         //! Decode a CAN frame and call the appropriate callback functions.
         void decode(const struct can_frame &frame);
 
-        //! Callback function for status packets.
-        void status_callback(uint8_t controllerId, float erpm, float current, float dutyCycle);
-
-        //! Callback function for status 2 packets.
-        void status_2_callback(uint8_t controllerId, float ampHours, float ampHoursCharged);
-
-        //! Callback function for status 3 packets.
-        void status_3_callback(uint8_t controllerId, float wattHours, float wattHoursCharged);
-
-        //! Callback function for status 4 packets.
-        void status_4_callback(uint8_t controllerId, float tempFet, float tempMotor, float currentIn, float PIDPos);
-
-        //! Callback function for status 5 packets.
-        void status_5_callback(uint8_t controllerId, float tachometer, float vIn);
-
-        //! Callback function for status 6 packets.
-        void status_6_callback(uint8_t controllerId, float adc1, float adc2, float adc3, float ppm);
-
-
         std::string mDeviceName;
         int mSocket = -1;
         std::atomic_bool mTerminate = false;
         std::thread mReceiveThread;
-        bool mVerbose = false;
     };
 
 } // multivesc

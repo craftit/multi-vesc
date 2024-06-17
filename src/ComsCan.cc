@@ -118,7 +118,7 @@ namespace multivesc
     }
 
 
-    void ComsCan::set_duty(uint8_t controller_id, float duty)
+    void ComsCan::setDuty(uint8_t controller_id, float duty)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -127,7 +127,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_DUTY << 8), buffer, send_index);
     }
 
-    void ComsCan::set_current(uint8_t controller_id, float current)
+    void ComsCan::setCurrent(uint8_t controller_id, float current)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -136,7 +136,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_CURRENT << 8), buffer, send_index);
     }
 
-    void ComsCan::set_current_off_delay(uint8_t controller_id, float current, float off_delay)
+    void ComsCan::setCurrentOffDelay(uint8_t controller_id, float current, float off_delay)
     {
         int32_t send_index = 0;
         uint8_t buffer[6];
@@ -146,7 +146,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_CURRENT << 8), buffer, send_index);
     }
 
-    void ComsCan::set_current_brake(uint8_t controller_id, float current) {
+    void ComsCan::setCurrentBrake(uint8_t controller_id, float current) {
         int32_t send_index = 0;
         uint8_t buffer[4];
         buffer_append_int32(buffer, (int32_t) (current * 1000.0), &send_index);
@@ -154,7 +154,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_CURRENT_BRAKE << 8), buffer, send_index);
     }
 
-    void ComsCan::set_rpm(uint8_t controller_id, float rpm)
+    void ComsCan::setRPM(uint8_t controller_id, float rpm)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -163,7 +163,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_RPM << 8), buffer, send_index);
     }
 
-    void ComsCan::set_pos(uint8_t controller_id, float pos)
+    void ComsCan::setPos(uint8_t controller_id, float pos)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -172,7 +172,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_POS << 8), buffer, send_index);
     }
 
-    void ComsCan::set_current_rel(uint8_t controller_id, float current_rel)
+    void ComsCan::setCurrentRel(uint8_t controller_id, float current_rel)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -184,7 +184,7 @@ namespace multivesc
     /**
      * Same as above, but also sets the off delay. Note that this command uses 6 bytes now. The off delay is useful to set to keep the current controller running for a while even after setting currents below the minimum current.
      */
-    void ComsCan::set_current_rel_off_delay(uint8_t controller_id, float current_rel, float off_delay)
+    void ComsCan::setCurrentRelOffDelay(uint8_t controller_id, float current_rel, float off_delay)
     {
         int32_t send_index = 0;
         uint8_t buffer[6];
@@ -194,7 +194,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_CURRENT_REL << 8), buffer, send_index);
     }
 
-    void ComsCan::set_current_brake_rel(uint8_t controller_id, float current_rel)
+    void ComsCan::setCurrentBrakeRel(uint8_t controller_id, float current_rel)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -203,7 +203,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_CURRENT_BRAKE_REL << 8), buffer, send_index);
     }
 
-    void ComsCan::set_handbrake(uint8_t controller_id, float current)
+    void ComsCan::setHandbrake(uint8_t controller_id, float current)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -212,7 +212,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_CURRENT_HANDBRAKE << 8), buffer, send_index);
     }
 
-    void ComsCan::set_handbrake_rel(uint8_t controller_id, float current_rel)
+    void ComsCan::setHandbrakeRel(uint8_t controller_id, float current_rel)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -287,20 +287,20 @@ namespace multivesc
                 auto erpm = get_scaled_float32(frame.data, 0, 1);
                 auto current = get_scaled_float16(frame.data, 4, 10);
                 auto duty = get_scaled_float16(frame.data, 6, 1000);
-                status_callback(controllerId, erpm, current, duty);
+                statusCallback(controllerId, erpm, current, duty);
             }
                 break;
             case CAN_PACKET_STATUS_2:
             {
                 auto ampHours = get_scaled_float32(frame.data, 0, 10000);
                 auto ampHoursCharged = get_scaled_float32(frame.data, 4, 10000);
-                status_2_callback(controllerId, ampHours, ampHoursCharged);
+                status2Callback(controllerId, ampHours, ampHoursCharged);
             } break;
             case CAN_PACKET_STATUS_3:
             {
                 auto wattHours = get_scaled_float32(frame.data, 0, 10000);
                 auto wattHoursCharged = get_scaled_float32(frame.data, 4, 10000);
-                status_3_callback(controllerId, wattHours, wattHoursCharged);
+                status3Callback(controllerId, wattHours, wattHoursCharged);
             } break;
             case CAN_PACKET_STATUS_4:
             {
@@ -308,13 +308,13 @@ namespace multivesc
                 auto tempMotor = get_scaled_float16(frame.data, 2, 10);
                 auto currentIn = get_scaled_float16(frame.data, 4, 10);
                 auto PIDPos = get_scaled_float16(frame.data, 6, 50);
-                status_4_callback(controllerId, tempFet, tempMotor, currentIn, PIDPos);
+                status4Callback(controllerId, tempFet, tempMotor, currentIn, PIDPos);
             } break;
             case CAN_PACKET_STATUS_5:
             {
                 auto tachometer = get_scaled_float32(frame.data, 0, 6);
                 auto vIn = get_scaled_float16(frame.data, 4, 10);
-                status_5_callback(controllerId, tachometer, vIn);
+                status5Callback(controllerId, tachometer, vIn);
             } break;
             case CAN_PACKET_STATUS_6:
             {
@@ -322,42 +322,12 @@ namespace multivesc
                 auto adc2 = get_scaled_float16(frame.data, 2, 1000);
                 auto adc3 = get_scaled_float16(frame.data, 4, 1000);
                 auto ppm = get_scaled_float16(frame.data, 6, 1000);
-                status_6_callback(controllerId, adc1, adc2, adc3, ppm);
+                status6Callback(controllerId, adc1, adc2, adc3, ppm);
 
             } break;
         }
     }
 
-    void ComsCan::status_callback(uint8_t controllerId, float erpm, float current, float dutyCycle)
-    {
-
-    }
-
-    void ComsCan::status_2_callback(uint8_t controllerId, float ampHours, float ampHoursCharged)
-    {
-
-    }
-
-    void ComsCan::status_3_callback(uint8_t controllerId, float wattHours, float wattHoursCharged)
-    {
-
-    }
-
-    void
-    ComsCan::status_4_callback(uint8_t controllerId, float tempFet, float tempMotor, float currentIn, float PIDPos)
-    {
-
-    }
-
-    void ComsCan::status_5_callback(uint8_t controllerId, float tachometer, float vIn)
-    {
-
-    }
-
-    void ComsCan::status_6_callback(uint8_t controllerId, float adc1, float adc2, float adc3, float ppm)
-    {
-
-    }
 
 
 } // multivesc

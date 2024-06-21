@@ -11,6 +11,8 @@
 
 namespace multivesc {
 
+    class Manager;
+
     enum class MotorValuesT
     {
         RPM,
@@ -32,6 +34,21 @@ namespace multivesc {
         PPM
     };
 
+    enum class MotorDriveT
+    {
+        NONE,
+        DUTY,
+        CURRENT,
+        CURRENT_REL,
+        CURRENT_BREAK,
+        CURRENT_BREAK_REL,
+        RPM,
+        POS,
+        HAND_BRAKE,
+        HAND_BRAKE_REL
+    };
+
+
     class Motor
     {
     public:
@@ -41,46 +58,46 @@ namespace multivesc {
         explicit Motor(std::shared_ptr<ComsInterface> coms, uint8_t id = 0);
 
         //! Set the duty cycle of the motor controller. The duty cycle is a value between -1 and 1.
-        void setDuty(uint8_t controller_id, float duty);
+        void setDuty(float duty);
 
         //! Set motor current in Amps.
-        void setCurrent(uint8_t controller_id, float current);
+        void setCurrent(float current);
 
         //! Set motor current in Amps with an off delay. The off delay is useful to keep the current controller running for a while even after setting currents below the minimum current.
-        void setCurrentOffDelay(uint8_t controller_id, float current, float off_delay);
+        void setCurrentOffDelay(float current, float off_delay);
 
         //! Set brake current in Amps.
-        void setCurrentBrake(uint8_t controller_id, float current);
+        void setCurrentBrake(float current);
 
         //! Set the RPM of the motor controller.
-        void setRPM(uint8_t controller_id, float rpm);
+        void setRPM(float rpm);
 
         //! Set the position of the motor controller. The position is in turns.
-        void setPos(uint8_t controller_id, float pos);
+        void setPos(float pos);
 
         //! Set the current of the motor controller as a percentage of the maximum current.
-        void setCurrentRel(uint8_t controller_id, float current_rel);
+        void setCurrentRel(float current_rel);
 
         //! Same as above, but also sets the off delay. Note that this command uses 6 bytes now. The off delay is useful to set to keep the current controller running for a while even after setting currents below the minimum current.
-        void setCurrentRelOffDelay(uint8_t controller_id, float current_rel, float off_delay);
+        void setCurrentRelOffDelay(float current_rel, float off_delay);
 
         //! Set brake current in Amps as a percentage of the maximum current.
-        void setCurrentBrakeRel(uint8_t controller_id, float current_rel);
+        void setCurrentBrakeRel(float current_rel);
 
         //! Set handbrake current in Amps.
-        void setHandbrake(uint8_t controller_id, float current);
+        void setHandbrake(float current);
 
         //! Set handbrake current in Amps as a percentage of the maximum current.
-        void setHandbrakeRel(uint8_t controller_id, float current_rel);
+        void setHandbrakeRel(float current_rel);
 
         //! Access motor id
         [[nodiscard]] uint8_t id() const { return mId; }
 
         //! Access motor speed in RPM
-        [[nodiscard]] float rpm() const { return eRpm; }
+        [[nodiscard]] float rpm() const { return mERpm; }
 
         //! Access motor current in Amps
-        [[nodiscard]] float current() const { return eCurrent; }
+        [[nodiscard]] float current() const { return mECurrent; }
 
         //! Access motor duty cycle (0 to 1)
         [[nodiscard]] float duty() const { return mDuty; }
@@ -132,6 +149,9 @@ namespace multivesc {
     protected:
         void doCallback(MotorValuesT type, float value);
 
+        //! Do an update.
+        void update();
+
         //! Callback function for status packets.
         void statusCallback(float erpm, float current, float dutyCycle);
 
@@ -156,10 +176,18 @@ namespace multivesc {
         std::mutex mMutex;
         std::function<void(MotorValuesT,float)> mCallback;
 
+        // Drive mode
+        std::mutex mDriveMutex;
+        MotorDriveT mDriveMode = MotorDriveT::NONE;
+        float mDriveValue = 0.0;
+        std::chrono::steady_clock::time_point mDriveUpdateTime;
+        std::chrono::steady_clock::duration mDriveTimeout = std::chrono::milliseconds(200);
+
         uint8_t mId = 0; // Controller ID
 
-        std::atomic<float> eRpm = 0.0;
-        std::atomic<float> eCurrent = 0.0;
+        // Sensor values
+        std::atomic<float> mERpm = 0.0;
+        std::atomic<float> mECurrent = 0.0;
         std::atomic<float> mDuty = 0.0;
         std::atomic<float> mAmpHours = 0.0;
         std::atomic<float> mAmpHoursCharged = 0.0;
@@ -177,6 +205,7 @@ namespace multivesc {
         std::atomic<float> mPPM = 0.0;
 
         friend class ComsInterface;
+        friend class Manager;
     };
 
 

@@ -3,13 +3,20 @@
 //
 
 #include <iostream>
+#include <thread>
+#include <chrono>
 #include "cxxopts.hpp"
 #include "multivesc/ComsCan.hh"
+#include "multivesc/Manager.hh"
+
+bool gTerminate = false;
 
 int main(int argc, char *argv[])
 {
+    using namespace std::chrono_literals;
+
     std::string deviceName = "can0";
-    bool verbose = false;
+    bool verbose = true;
     try {
         cxxopts::Options options(argv[0], " - command line options");
 
@@ -39,7 +46,24 @@ int main(int argc, char *argv[])
     std::cout << "deviceName: " << deviceName << std::endl;
     std::cout << "verbose: " << verbose << std::endl;
 
+    multivesc::Manager manager;
 
+    if(!manager.openCan(deviceName)) {
+        std::cout << "Failed to open CAN device" << std::endl;
+        return 1;
+    }
+
+    std::this_thread::sleep_for(1s);
+
+    auto motor = manager.getMotor(0x58);
+
+    std::cout << "Setting RPM to 5000" << std::endl;
+
+    motor->setRPM(5000);
+
+    while(!gTerminate) {
+        std::this_thread::sleep_for(1s);
+    }
 
     return 0;
 }

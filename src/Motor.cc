@@ -16,7 +16,7 @@ namespace multivesc {
 
     void Motor::setCallback(std::function<void(MotorValuesT, float)> callback) {
         std::lock_guard lock(mMutex);
-        mCallback = callback;
+        mCallback = std::move(callback);
     };
 
     void Motor::doCallback(MotorValuesT type, float value) {
@@ -26,14 +26,59 @@ namespace multivesc {
         }
     }
 
+    void Motor::update()
+    {
+        std::lock_guard lock(mDriveMutex);
+        auto now = std::chrono::steady_clock::now();
+        if((now - mDriveUpdateTime) < mDriveTimeout)
+        {
+            // No need to update control values.
+            return;
+        }
+        mDriveUpdateTime = now;
+        switch(mDriveMode)
+        {
+            case MotorDriveT::NONE:
+                break;
+            case MotorDriveT::DUTY:
+                mComs->setDuty(mId, mDriveValue);
+                break;
+            case MotorDriveT::CURRENT:
+                mComs->setCurrent(mId,mDriveValue);
+                break;
+            case MotorDriveT::RPM:
+                mComs->setRPM(mId,mDriveValue);
+                break;
+            case MotorDriveT::POS:
+                mComs->setPos(mId,mDriveValue);
+                break;
+            case MotorDriveT::CURRENT_REL:
+                mComs->setCurrentRel(mId,mDriveValue);
+                break;
+            case MotorDriveT::CURRENT_BREAK:
+                mComs->setCurrentBrake(mId,mDriveValue);
+                break;
+            case MotorDriveT::CURRENT_BREAK_REL:
+                mComs->setCurrentBrakeRel(mId,mDriveValue);
+                break;
+            case MotorDriveT::HAND_BRAKE:
+                mComs->setHandbrake(mId,mDriveValue);
+                break;
+            case MotorDriveT::HAND_BRAKE_REL:
+                mComs->setHandbrakeRel(mId,mDriveValue);
+                break;
+        }
+
+    }
+
 
     void Motor::statusCallback(float erpm, float current, float dutyCycle)
     {
-        eRpm = erpm;
-        eCurrent = current;
+        mERpm = erpm;
+        mECurrent = current;
         mDuty = dutyCycle;
-        doCallback(MotorValuesT::RPM, eRpm);
-        doCallback(MotorValuesT::CURRENT, eCurrent);
+        doCallback(MotorValuesT::RPM, mERpm);
+        doCallback(MotorValuesT::CURRENT, mECurrent);
         doCallback(MotorValuesT::DUTY, mDuty);
     }
 
@@ -85,89 +130,131 @@ namespace multivesc {
         doCallback(MotorValuesT::PPM, mPPM);
     }
 
-    void Motor::setDuty(uint8_t controller_id, float duty)
+    void Motor::setDuty(float duty)
     {
-        if(!mComs)
-            return ;
         if(duty < -1.0) {
             duty = -1.0;
         } else if(duty > 1.0) {
             duty = 1.0;
         }
+        std::lock_guard lock(mDriveMutex);
+        mDriveUpdateTime = std::chrono::steady_clock::now();
+        mDriveMode = MotorDriveT::DUTY;
+        mDriveValue = duty;
+        if(!mComs)
+            return ;
         mComs->setDuty(mId, duty);
     }
 
-    void Motor::setCurrent(uint8_t controller_id, float current)
+    void Motor::setCurrent(float current)
     {
+        std::lock_guard lock(mDriveMutex);
+        mDriveUpdateTime = std::chrono::steady_clock::now();
+        mDriveMode = MotorDriveT::CURRENT;
+        mDriveValue = current;
         if(!mComs)
             return ;
         mComs->setCurrent(mId, current);
     }
 
-    void Motor::setCurrentOffDelay(uint8_t controller_id, float current, float off_delay)
+    void Motor::setCurrentOffDelay(float current, float off_delay)
     {
+        std::lock_guard lock(mDriveMutex);
+        mDriveUpdateTime = std::chrono::steady_clock::now();
+        mDriveMode = MotorDriveT::CURRENT;
+        mDriveValue = current;
         if(!mComs)
             return ;
         mComs->setCurrentOffDelay(mId, current, off_delay);
     }
 
-    void Motor::setCurrentBrake(uint8_t controller_id, float current)
+    void Motor::setCurrentBrake(float current)
     {
+        std::lock_guard lock(mDriveMutex);
+        mDriveUpdateTime = std::chrono::steady_clock::now();
+        mDriveMode = MotorDriveT::CURRENT_BREAK;
+        mDriveValue = current;
         if(!mComs)
             return ;
         mComs->setCurrentBrake(mId, current);
     }
 
-    void Motor::setRPM(uint8_t controller_id, float rpm)
+    void Motor::setRPM(float rpm)
     {
+        std::lock_guard lock(mDriveMutex);
+        mDriveUpdateTime = std::chrono::steady_clock::now();
+        mDriveMode = MotorDriveT::RPM;
+        mDriveValue = rpm;
         if(!mComs)
             return ;
         mComs->setRPM(mId, rpm);
     }
 
-    void Motor::setPos(uint8_t controller_id, float pos)
+    void Motor::setPos(float pos)
     {
         if(!mComs)
             return ;
+        std::lock_guard lock(mDriveMutex);
+        mDriveUpdateTime = std::chrono::steady_clock::now();
+        mDriveMode = MotorDriveT::POS;
+        mDriveValue = pos;
         mComs->setPos(mId, pos);
     }
 
-    void Motor::setCurrentRel(uint8_t controller_id, float current_rel)
+    void Motor::setCurrentRel(float current_rel)
     {
+        std::lock_guard lock(mDriveMutex);
+        mDriveUpdateTime = std::chrono::steady_clock::now();
+        mDriveMode = MotorDriveT::CURRENT_REL;
+        mDriveValue = current_rel;
         if(!mComs)
             return ;
         mComs->setCurrentRel(mId, current_rel);
     }
 
-    void Motor::setCurrentRelOffDelay(uint8_t controller_id, float current_rel, float off_delay)
+    void Motor::setCurrentRelOffDelay(float current_rel, float off_delay)
     {
+        std::lock_guard lock(mDriveMutex);
+        mDriveUpdateTime = std::chrono::steady_clock::now();
+        mDriveMode = MotorDriveT::CURRENT_REL;
+        mDriveValue = current_rel;
         if(!mComs)
             return ;
         mComs->setCurrentRelOffDelay(mId, current_rel, off_delay);
     }
 
-    void Motor::setCurrentBrakeRel(uint8_t controller_id, float current_rel)
+    void Motor::setCurrentBrakeRel(float current_rel)
     {
+        std::lock_guard lock(mDriveMutex);
+        mDriveUpdateTime = std::chrono::steady_clock::now();
+        mDriveMode = MotorDriveT::CURRENT_BREAK_REL;
+        mDriveValue = current_rel;
         if(!mComs)
             return ;
         mComs->setCurrentBrakeRel(mId, current_rel);
     }
 
-    void Motor::setHandbrake(uint8_t controller_id, float current)
+    void Motor::setHandbrake(float current)
     {
+        std::lock_guard lock(mDriveMutex);
+        mDriveUpdateTime = std::chrono::steady_clock::now();
+        mDriveMode = MotorDriveT::HAND_BRAKE;
+        mDriveValue = current;
         if(!mComs)
             return ;
         mComs->setHandbrake(mId, current);
     }
 
-    void Motor::setHandbrakeRel(uint8_t controller_id, float current_rel)
+    void Motor::setHandbrakeRel(float current_rel)
     {
+        std::lock_guard lock(mDriveMutex);
+        mDriveUpdateTime = std::chrono::steady_clock::now();
+        mDriveMode = MotorDriveT::HAND_BRAKE_REL;
+        mDriveValue = current_rel;
         if(!mComs)
             return ;
         mComs->setHandbrakeRel(mId, current_rel);
     }
-
-
 
 
 } // multivesc

@@ -2,23 +2,27 @@
 # Mutli-Vesc
 
 API for driving multiple VESC motor controllers over CAN.  It is assumed that the motors are configure with the
-vesc tool.
+vesc tool.   Though the code currently only supports CAN, serial support could be added in the future.
 
-This code has been tested with: https://flipsky.net/collections/v6-series/products/flipsky-mini-fsesc6-7-pro-70a-base-on-vesc6-6-with-aluminum-anodized-heat-sink
+This code is for use with controllers based on the VESC project: https://vesc-project.com/
+
+
+This code has been tested with [FLIPSKY Mini FSESC6.7](https://flipsky.net/collections/v6-series/products/flipsky-mini-fsesc6-7-pro-70a-base-on-vesc6-6-with-aluminum-anodized-heat-sink)
 
 # Installation
 
 Building on Ubuntu 24.04:
 
-    sudo apt install nlohmann-json3-dev cmake ninja
+    sudo apt install nlohmann-json3-dev cmake ninja build-essential can-utils
     mkdir build
     cd build
     cmake .. 
     make
 
-# Documentation
+# Protocol
 
-CAN protocol: https://github.com/vedderb/bldc/blob/master/documentation/comm_can.md
+The VESC [CAN protocol](https://github.com/vedderb/bldc/blob/master/documentation/comm_can.md) is used to communicate 
+with the VESC controllers.
 
 # License
 

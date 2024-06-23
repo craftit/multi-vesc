@@ -20,6 +20,13 @@ Building on Ubuntu 24.04:
 
 CAN protocol: https://github.com/vedderb/bldc/blob/master/documentation/comm_can.md
 
+# License
+
+This code is licensed under the MIT license unless otherwise noted.
+
+The follow files have their own license:
+
+    include/multivesc/crc.hh    
 
 # Configuring CAN
 

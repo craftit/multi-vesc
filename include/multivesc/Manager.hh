@@ -46,7 +46,7 @@ namespace multivesc {
         std::mutex mMutex;
 
         std::shared_ptr<ComsInterface> mPrimaryComs;
-        std::vector<std::shared_ptr<Motor>> mMotors;
+        std::vector<std::shared_ptr<Motor>> mMotors = std::vector<std::shared_ptr<Motor>>(256);
     };
 
 } // multivesc

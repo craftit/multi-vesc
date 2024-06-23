@@ -14,6 +14,13 @@ namespace multivesc {
     {
     }
 
+    void Motor::setName(const std::string &name)
+    {
+        std::lock_guard lock(mMutex);
+        mName = name;
+    }
+
+
     void Motor::setCallback(std::function<void(MotorValuesT, float)> callback) {
         std::lock_guard lock(mMutex);
         mCallback = std::move(callback);

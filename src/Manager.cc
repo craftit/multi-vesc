@@ -2,6 +2,7 @@
 // Created by charles on 17/06/24.
 //
 
+#include <iostream>
 #include "multivesc/Manager.hh"
 #include "multivesc/ComsCan.hh"
 
@@ -61,6 +62,10 @@ namespace multivesc
             std::lock_guard lock(mMutex);
             for(auto &motor : mMotors)
             {
+                if(!motor)
+                {
+                    continue;
+                }
                 motor->update();
             }
         }
@@ -70,19 +75,21 @@ namespace multivesc
     std::shared_ptr<Motor> Manager::getMotor(uint8_t id)
     {
         std::lock_guard lock(mMutex);
-        if(id < mMotors.size())
+        if(id >= mMotors.size())
         {
-            if(!mMotors[id])
-            {
-                if(!mPrimaryComs)
-                {
-                    return {};
-                }
-                mMotors[id] = std::make_shared<Motor>(mPrimaryComs, id);
-            }
-            return mMotors[id];
+            std::cerr << "Motor id out of range" << std::endl;
+            return {};
         }
-        return {};
+        if(!mMotors[id])
+        {
+            if(!mPrimaryComs)
+            {
+                std::cerr << "No primary coms set" << std::endl;
+                return {};
+            }
+            mMotors[id] = std::make_shared<Motor>(mPrimaryComs, id);
+        }
+        return mMotors[id];
     }
 
 

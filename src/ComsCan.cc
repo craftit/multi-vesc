@@ -2,16 +2,15 @@
 // Created by charles on 17/06/24.
 //
 
-#include "multivesc/ComsCan.hh"
-
+#include <iostream>
 #include <unistd.h>
 #include <cstring>
+#include <utility>
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-
 #include <linux/can/raw.h>
-
+#include "multivesc/ComsCan.hh"
 
 namespace multivesc
 {
@@ -47,8 +46,8 @@ namespace multivesc
     }
 
 
-    ComsCan::ComsCan(const std::string &deviceName)
-     : mDeviceName(deviceName)
+    ComsCan::ComsCan(std::string deviceName)
+     : mDeviceName(std::move(deviceName))
     {
 
     }
@@ -65,6 +64,10 @@ namespace multivesc
     {
         // Check it is not already open
         if(mSocket >= 0) {
+            return false;
+        }
+        if(mDeviceName.empty()) {
+            std::cerr << "Device name is empty" << std::endl;
             return false;
         }
         mSocket = socket(PF_CAN, SOCK_RAW, CAN_RAW);

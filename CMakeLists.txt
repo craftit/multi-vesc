@@ -2,6 +2,8 @@
 cmake_minimum_required(VERSION 3.13)
 project(MutliVesc)
 
+find_package(nlohmann_json REQUIRED)
+
 add_library(mutlivesc STATIC
         src/ComsInterface.cc include/multivesc/ComsInterface.hh
         src/Manager.cc include/multivesc/Manager.hh
@@ -18,4 +20,4 @@ add_executable(vesc_run
         src/run_vesc.cc
 )
 
-target_link_libraries(vesc_run mutlivesc)
+target_link_libraries(vesc_run mutlivesc nlohmann_json::nlohmann_json)

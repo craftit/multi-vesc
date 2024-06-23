@@ -57,6 +57,12 @@ namespace multivesc {
         //! Constructor
         explicit Motor(std::shared_ptr<ComsInterface> coms, uint8_t id = 0);
 
+        //! Set the name of the motor.
+        void setName(const std::string& name);
+
+        //! Get the name of the motor.
+        [[nodiscard]] std::string name() const { return mName; }
+
         //! Set the duty cycle of the motor controller. The duty cycle is a value between -1 and 1.
         void setDuty(float duty);
 

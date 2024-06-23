@@ -42,7 +42,7 @@ namespace multivesc {
       : public ComsInterface
     {
     public:
-        explicit ComsCan(const std::string &deviceName);
+        explicit ComsCan(std::string deviceName);
 
         //! Destructor
         virtual ~ComsCan();

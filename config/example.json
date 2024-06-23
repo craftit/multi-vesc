@@ -2,11 +2,17 @@
   "motors": {
     "atomiser1": {
       "id": 88,
-      "rpm": 8000
+      "enable": true,
+      "rpm": 10000,
+      "maxRPMAcceleration": 1000,
+      "minRPM": 2000,
+      "startDelay": 0.2
     },
     "atomiser2": {
       "id": 122,
+      "enable": false,
       "duty": 0
+
     }
   }
 }

@@ -20,6 +20,71 @@ void signalHandler(int signum)
     gTerminate = true;
 }
 
+bool configureMotor(multivesc::Manager &manager, const std::string& motorName, const json& motorConfig)
+{
+    int motorId = motorConfig["id"];
+    std::cout << "Configuring motor '" << motorName << "'  (" << motorId << ")  to ";
+    auto motor = manager.getMotor(motorId);
+    if(motor == nullptr) {
+        std::cout << "Failed to get motor" << std::endl;
+        return false;
+    }
+    motor->setName(motorName);
+    // Setup maximum acceleration
+    if(motorConfig.contains("maxRPMAcceleration")) {
+        float maxRPMAcceleration = motorConfig["maxRPMAcceleration"];
+        motor->setMaxRPMAcceleration(maxRPMAcceleration);
+        std::cout << " MaxRPMAcceleration=" << maxRPMAcceleration << " ";
+    }
+    // Setup minimum motor RPM
+    if(motorConfig.contains("minRPM")) {
+        float minRPM = motorConfig["minRPM"];
+        motor->setMinRPM(minRPM);
+        std::cout << " MinRPM=" << minRPM << " ";
+    }
+    if(!motorConfig.value("enable", true)) {
+        motor->setRPM(0.0f);
+        std::cout << " Disabled ";
+        return true;
+    }
+    // Get the delay before we should start the motor
+    if(motorConfig.contains("startDelay")) {
+        float startDelay = motorConfig.value("startDelay",0.1f);
+        std::this_thread::sleep_for(std::chrono::milliseconds((int)(startDelay*1000)));
+    }
+
+    bool controlSet = false;
+    if(motorConfig.contains("rpm")) {
+        float rpm = motorConfig["rpm"];
+        motor->setRPM(rpm);
+        controlSet = true;
+        std::cout <<" RPM=" << rpm << " ";
+    }
+    if(motorConfig.contains("current")) {
+        if(controlSet) {
+            std::cout << "Both RPM and current set for motor " << motorName << std::endl;
+            return false;
+        }
+        float current = motorConfig["current"];
+        motor->setCurrent(current);
+        std::cout << " Current=" << current << " ";
+        controlSet = true;
+    }
+    if(motorConfig.contains("duty")) {
+        if(controlSet) {
+            std::cout << "Both RPM and duty set for motor " << motorName << std::endl;
+            return false;
+        }
+        float duty = motorConfig["duty"];
+        std::cout << " Duty=" << duty << " ";
+        motor->setDuty(duty);
+        controlSet = true;
+    }
+    std::cout << " " << std::endl;
+
+    return true;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -29,7 +94,7 @@ int main(int argc, char *argv[])
 
     std::string deviceName = "can0";
     std::string configFileName = "config.json";
-    bool verbose = true;
+    bool verbose = false;
     try {
         cxxopts::Options options(argv[0], " - command line options");
 
@@ -72,6 +137,8 @@ int main(int argc, char *argv[])
 
     multivesc::Manager manager;
 
+    manager.setVerbose(verbose);
+
     if(!manager.openCan(deviceName)) {
         std::cout << "Failed to open CAN device" << std::endl;
         return 1;
@@ -83,43 +150,10 @@ int main(int argc, char *argv[])
     for(auto& item : config["motors"].items())
     {
         const std::string& motorName = item.key();
-        int motorId = item.value()["id"];
-        std::cout << "Configuring motor '" << motorName << "'  (" << motorId << ")  to ";
-        auto motorConfig = item.value();
-        auto motor = manager.getMotor(motorId);
-        if(motor == nullptr) {
-            std::cout << "Failed to get motor" << std::endl;
+        if(!configureMotor(manager, motorName, item.value())) {
+            std::cout << "Failed to configure motor " << motorName << std::endl;
             return 1;
         }
-        motor->setName(motorName);
-        bool controlSet = false;
-        if(motorConfig.contains("rpm")) {
-            float rpm = motorConfig["rpm"];
-            motor->setRPM(rpm);
-            controlSet = true;
-            std::cout <<" RPM=" << rpm << " ";
-        }
-        if(motorConfig.contains("current")) {
-            if(controlSet) {
-                std::cout << "Both RPM and current set for motor " << motorName << std::endl;
-                return 1;
-            }
-            float current = motorConfig["current"];
-            motor->setCurrent(current);
-            std::cout << " Current=" << current << " ";
-            controlSet = true;
-        }
-        if(motorConfig.contains("duty")) {
-            if(controlSet) {
-                std::cout << "Both RPM and duty set for motor " << motorName << std::endl;
-                return 1;
-            }
-            float duty = motorConfig["duty"];
-            std::cout << " Duty=" << duty << " ";
-            motor->setDuty(duty);
-            controlSet = true;
-        }
-        std::cout << " " << std::endl;
     }
 
     while(!gTerminate) {

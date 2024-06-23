@@ -20,6 +20,12 @@ namespace multivesc {
         //! Constructor
         Manager() = default;
 
+        //! Disable copy and move constructors
+        Manager(const Manager&) = delete;
+        Manager& operator=(const Manager&) = delete;
+        Manager(Manager&&) = delete;
+        Manager& operator=(Manager&&) = delete;
+
         //! Constructor
         explicit Manager(std::shared_ptr<ComsInterface> coms);
 
@@ -30,7 +36,7 @@ namespace multivesc {
         bool openCan(const std::string& port);
 
         //! Find a motor by id
-        std::shared_ptr<Motor> getMotor(uint8_t id);
+        [[nodiscard]] std::shared_ptr<Motor> getMotor(uint8_t id);
 
         //! Start the manager
         bool start();
@@ -38,10 +44,18 @@ namespace multivesc {
         //! Stop the manager
         bool stop();
 
+        //! Setup verbose output
+        void setVerbose(bool verbose)
+        { mVerbose = verbose; }
+
+        //! Get verbose output
+        [[nodiscard]] bool verbose() const
+        { return mVerbose; }
     protected:
         void runUpdate();
 
         std::atomic<bool> mTerminate = false;
+        bool mVerbose = false;
         std::thread mUpdateThread;
         std::mutex mMutex;
 

@@ -2,6 +2,7 @@
 // Created by charles on 17/06/24.
 //
 
+#include <iostream>
 #include <utility>
 
 #include "multivesc/Motor.hh"
@@ -12,6 +13,9 @@ namespace multivesc {
     : mComs(std::move(coms)),
       mId(id)
     {
+        auto now = std::chrono::steady_clock::now();
+        mDriveUpdateTime = now;
+        mLastRPMDemandChange = now;
     }
 
     void Motor::setName(const std::string &name)
@@ -19,7 +23,6 @@ namespace multivesc {
         std::lock_guard lock(mMutex);
         mName = name;
     }
-
 
     void Motor::setCallback(std::function<void(MotorValuesT, float)> callback) {
         std::lock_guard lock(mMutex);
@@ -37,11 +40,6 @@ namespace multivesc {
     {
         std::lock_guard lock(mDriveMutex);
         auto now = std::chrono::steady_clock::now();
-        if((now - mDriveUpdateTime) < mDriveTimeout)
-        {
-            // No need to update control values.
-            return;
-        }
         mDriveUpdateTime = now;
         switch(mDriveMode)
         {
@@ -54,7 +52,7 @@ namespace multivesc {
                 mComs->setCurrent(mId,mDriveValue);
                 break;
             case MotorDriveT::RPM:
-                mComs->setRPM(mId,mDriveValue);
+                updateRPM(mDriveValue);
                 break;
             case MotorDriveT::POS:
                 mComs->setPos(mId,mDriveValue);
@@ -194,8 +192,38 @@ namespace multivesc {
         mDriveValue = rpm;
         if(!mComs)
             return ;
+        updateRPM(rpm);
+    }
+
+    void Motor::updateRPM(float rpm)
+    {
+        auto now = std::chrono::steady_clock::now();
+        if(mMaxRPMAcceleration >= 0.0) {
+            auto dt = now - mLastRPMDemandChange;
+            // Convert dt to floating point seconds
+            float dtf = std::chrono::duration<float>(dt).count();
+            if (dtf >= 0.0) {
+                float deltaRPM = rpm - mLastRPMDemand;
+                float maxDeltaRPM = mMaxRPMAcceleration * dtf;
+                if (deltaRPM > maxDeltaRPM) {
+                    rpm = mLastRPMDemand + maxDeltaRPM;
+                } else if (deltaRPM < -maxDeltaRPM) {
+                    rpm = mLastRPMDemand - maxDeltaRPM;
+                }
+            }
+            // Make sure we start at the minimum RPM, needed for senseless operation
+            if (std::abs(rpm) > 0.0) {
+                if (std::abs(rpm) < mMinRPM) {
+                    rpm = std::abs(mMinRPM);
+                }
+            }
+            //std::cout << " Update delta " << dtf << " RPM:" << rpm << " "<< std::endl;
+        }
+        mLastRPMDemandChange = now;
+        mLastRPMDemand = rpm;
         mComs->setRPM(mId, rpm);
     }
+
 
     void Motor::setPos(float pos)
     {
@@ -261,6 +289,16 @@ namespace multivesc {
         if(!mComs)
             return ;
         mComs->setHandbrakeRel(mId, current_rel);
+    }
+
+    void Motor::setMinRPM(float rpm)
+    {
+        mMinRPM = rpm;
+    }
+
+    void Motor::setMaxRPMAcceleration(float rpm_per_sec)
+    {
+        mMaxRPMAcceleration = rpm_per_sec;
     }
 
 

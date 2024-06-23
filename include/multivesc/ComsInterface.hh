@@ -26,6 +26,12 @@ namespace multivesc
         //! Constructor
         ComsInterface();
 
+        //! Disable copy and move constructors
+        ComsInterface(const ComsInterface&) = delete;
+        ComsInterface& operator=(const ComsInterface&) = delete;
+        ComsInterface(ComsInterface&&) = delete;
+        ComsInterface& operator=(ComsInterface&&) = delete;
+
         virtual ~ComsInterface() = default;
 
         //! Start the coms interface

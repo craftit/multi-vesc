@@ -8,6 +8,7 @@
 
 namespace multivesc
 {
+    using namespace std::chrono_literals;
 
     Manager::Manager(std::shared_ptr<ComsInterface> coms)
      : mPrimaryComs(std::move(coms))
@@ -23,6 +24,7 @@ namespace multivesc
     bool Manager::openCan(const std::string& port)
     {
         mPrimaryComs = std::make_shared<ComsCan>(port);
+        mPrimaryComs->setVerbose(mVerbose);
         if(!mPrimaryComs->open()) {
             return false;
         }
@@ -57,7 +59,7 @@ namespace multivesc
     {
         while(!mTerminate)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(50ms);
 
             std::lock_guard lock(mMutex);
             for(auto &motor : mMotors)

@@ -57,11 +57,25 @@ namespace multivesc {
         //! Constructor
         explicit Motor(std::shared_ptr<ComsInterface> coms, uint8_t id = 0);
 
+        //! Disable copy and move constructors
+        Motor(const Motor&) = delete;
+        Motor& operator=(const Motor&) = delete;
+        Motor(Motor&&) = delete;
+        Motor& operator=(Motor&&) = delete;
+
         //! Set the name of the motor.
         void setName(const std::string& name);
 
         //! Get the name of the motor.
         [[nodiscard]] std::string name() const { return mName; }
+
+        //! Set the minimum RPM for the motor.
+        //! This is required for sensorless operation.
+        void setMinRPM(float rpm);
+
+        //! Set the maximum RPM acceleration for the motor.
+        //! The acceleration is in RPM per second. Negative values disable acceleration limiting.
+        void setMaxRPMAcceleration(float rpm_per_sec);
 
         //! Set the duty cycle of the motor controller. The duty cycle is a value between -1 and 1.
         void setDuty(float duty);
@@ -176,6 +190,8 @@ namespace multivesc {
         //! Callback function for status 6 packets.
         void status6Callback(float adc1, float adc2, float adc3, float ppm);
 
+        //! Update RPM
+        void updateRPM(float rpm);
 
         std::shared_ptr<ComsInterface> mComs;
         std::string mName;
@@ -186,10 +202,16 @@ namespace multivesc {
         std::mutex mDriveMutex;
         MotorDriveT mDriveMode = MotorDriveT::NONE;
         float mDriveValue = 0.0;
+        float mLastDriveValue = 0.0;
         std::chrono::steady_clock::time_point mDriveUpdateTime;
         std::chrono::steady_clock::duration mDriveTimeout = std::chrono::milliseconds(200);
 
         uint8_t mId = 0; // Controller ID
+
+        std::atomic<float> mMinRPM = 5000.0;
+        std::atomic<float> mMaxRPMAcceleration = -1.0; //! In RPM per second, negative values disable acceleration limiting.
+        std::chrono::steady_clock::time_point mLastRPMDemandChange;
+        float mLastRPMDemand = 0.0;
 
         // Sensor values
         std::atomic<float> mERpm = 0.0;

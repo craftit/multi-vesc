@@ -83,6 +83,7 @@ For each motor the following parameters can be set:
 
 * id: The CAN id of the motor
 * enable: If the motor is enabled
+* numPoles: The number of poles of the motor. Used to calculate the RPM from the ERPM
 * controlMode: The control mode of the motor
 * One of the following types of drive values, depending on the 'controlMode':
   * rpm: The target RPM of the motor

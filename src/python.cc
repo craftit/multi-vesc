@@ -13,7 +13,7 @@ PYBIND11_MODULE(pymultivesc, m) {
         python wrapper for multivesc
         -----------------------
 
-        .. currentmodule:: pymulivesc
+        .. currentmodule:: pymultivesc
 
         .. autosummary::
            :toctree: _generate

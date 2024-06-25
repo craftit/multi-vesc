@@ -30,9 +30,11 @@ namespace multivesc {
 
     MotorDriveT driveTypeFromString(const std::string& str)
     {
+        std::string upper = str;
+        std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
         for(int i = 0; i < (int)MotorDriveT::HAND_BRAKE_REL; i++)
         {
-            if(str == to_string((MotorDriveT)i))
+            if(upper == to_string((MotorDriveT)i))
             {
                 return (MotorDriveT)i;
             }
@@ -47,6 +49,10 @@ namespace multivesc {
 
     bool Motor::configure(Manager &manager, json config)
     {
+        mVerbose = config.value("verbose",false);
+        if(mVerbose) {
+            std::cout << "Configuring motor " << mName << std::endl;
+        }
         std::string busName = config.value("bus","can0");
         mComs = manager.getBus(busName);
         if(mComs == nullptr) {
@@ -55,11 +61,25 @@ namespace multivesc {
         }
         mId = config.value("id", 0);
         mEnabled = config.value("enabled", true);
-        std::string defaultName = "motor_" + busName + "_" + std::to_string(mId);
-        setName(config.value("name", defaultName));
+        if(mVerbose) {
+            std::cout << " Motor id: " << static_cast<int>(mId) << " Enabled:" << mEnabled << std::endl;
+        }
+        if(mName.empty()) {
+            std::string defaultName = "motor_" + busName + "_" + std::to_string(mId);
+            setName(config.value("name", defaultName));
+        } else {
+            if(config.contains("name")) {
+                std::cerr << "Motor name already set, ignoring name in config" << std::endl;
+            }
+        }
         setMaxRPMAcceleration(config.value("maxRPMAcceleration",-1.0f));
         setMinRPM(config.value("minRPM",0.0f));
         mNumPolePairs = config.value("numPoles",1.0f) / 2.0f;
+
+        if(mVerbose) {
+            std::cout << " Min RPM: " << mMinRPM << "   Max RPM Acceleration: " << mMaxRPMAcceleration << std::endl;
+            std::cout << " Number of poles: " << (mNumPolePairs*2.0f) << std::endl;
+        }
         if(!mComs->register_motor(shared_from_this())) {
             return false;
         }
@@ -71,6 +91,10 @@ namespace multivesc {
             return false;
         }
         mDriveMode = MotorDriveT::NONE;
+
+        if(mVerbose) {
+            std::cout << " Control mode: " << to_string(mPrimaryDriveMode) << std::endl;
+        }
 
         manager.register_motor(*this);
 
@@ -88,12 +112,20 @@ namespace multivesc {
                     break;
                 case MotorDriveT::DUTY:
                     if(config.contains("duty")) {
-                        setDuty(config["duty"]);
+                        float duty = config["duty"];
+                        if(mVerbose) {
+                            std::cerr << " Setting initial duty cycle to " << duty << std::endl;
+                        }
+                        setDuty(duty);
                     }
                 break;
                 case MotorDriveT::CURRENT:
                     if(config.contains("current")) {
-                        setCurrent(config["current"]);
+                        float current = config["current"];
+                        if(mVerbose) {
+                            std::cerr << " Setting initial current to " << current << std::endl;
+                        }
+                        setCurrent(current);
                     }
                 break;
                 case MotorDriveT::CURRENT_REL:
@@ -102,12 +134,20 @@ namespace multivesc {
                     break;
                 case MotorDriveT::RPM:
                     if(config.contains("rpm")) {
-                        setCurrent(config["rpm"]);
+                        float rpm = config["rpm"];
+                        if(mVerbose) {
+                            std::cerr << " Setting initial RPM to " << rpm << std::endl;
+                        }
+                        setRPM(rpm);
                     }
                 break;
                 case MotorDriveT::POS:
                     if(config.contains("pos")) {
-                        setPos(config["pos"]);
+                        float pos = config["pos"];
+                        if(mVerbose) {
+                            std::cerr << " Setting initial position to " << pos << std::endl;
+                        }
+                        setPos(pos);
                     }
                 break;
                 case MotorDriveT::HAND_BRAKE:

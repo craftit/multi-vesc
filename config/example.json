@@ -1,24 +1,26 @@
 {
   "buses": {
-    "can0": {
+    "can": {
+      "verbose": false,
       "type": "can",
       "device": "can0"
     }
   },
   "motors": {
     "atomiser1": {
-      "bus": "can0",
+      "verbose": false,
+      "bus": "can",
       "id": 88,
       "enable": true,
-      "rpm": 10000,
+      "rpm": 0,
       "numPoles": 14,
       "maxRPMAcceleration": 1000,
-      "minRPM": 2000,
+      "minRPM": 1000,
       "controlMode": "rpm",
       "startDelay": 0.2
     },
-    "atomiser2": {
-      "bus": "can0",
+    "pump": {
+      "bus": "can",
       "id": 122,
       "enable": false,
       "controlMode": "duty",

@@ -13,6 +13,7 @@ namespace multivesc {
 
     class Manager;
 
+    //! List of motor sensor value types
     enum class MotorValuesT
     {
         RPM,
@@ -34,6 +35,7 @@ namespace multivesc {
         PPM
     };
 
+    //! Drive modes for the motor controller
     enum class MotorDriveT
     {
         NONE,
@@ -48,8 +50,14 @@ namespace multivesc {
         HAND_BRAKE_REL
     };
 
+    //! Convert a MotorDriveT to a string
     std::string to_string(MotorDriveT type);
+
+    //! Convert a string to a MotorDriveT
+    //! If the string is not recognized, MotorDriveT::NONE is returned.
     MotorDriveT driveTypeFromString(const std::string& str);
+
+    //! Motor interface
 
     class Motor
         : public std::enable_shared_from_this<Motor>
@@ -117,7 +125,7 @@ namespace multivesc {
         //! Set handbrake current in Amps as a percentage of the maximum current.
         void setHandbrakeRel(float current_rel);
 
-        //! Access motor id
+        //! Access motor id as used on the bus
         [[nodiscard]] uint8_t id() const { return mId; }
 
         //! Access motor speed in RPM
@@ -208,6 +216,7 @@ namespace multivesc {
         // Drive mode
         std::mutex mDriveMutex;
         bool mEnabled = true;
+        std::atomic<bool> mVerbose = false;
         std::atomic<float> mNumPolePairs = 1.0f;
         MotorDriveT mPrimaryDriveMode = MotorDriveT::NONE;
         MotorDriveT mDriveMode = MotorDriveT::NONE;

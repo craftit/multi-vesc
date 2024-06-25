@@ -11,34 +11,43 @@
 #include <thread>
 #include <mutex>
 #include <functional>
+#include <nlohmann/json.hpp>
 
 namespace multivesc
 {
+    using json = nlohmann::json;
 
     class Motor;
+    class Manager;
 
     //! Abstract class for communicating with the VESC
     //! The implementation deal with can bus and serial communication
     //!
-    class ComsInterface
+    class BusInterface
     {
     public:
         //! Constructor
-        ComsInterface();
+        BusInterface();
+
+        //! Constructor
+        explicit BusInterface(const json &config);
 
         //! Disable copy and move constructors
-        ComsInterface(const ComsInterface&) = delete;
-        ComsInterface& operator=(const ComsInterface&) = delete;
-        ComsInterface(ComsInterface&&) = delete;
-        ComsInterface& operator=(ComsInterface&&) = delete;
+        BusInterface(const BusInterface&) = delete;
+        BusInterface& operator=(const BusInterface&) = delete;
+        BusInterface(BusInterface&&) = delete;
+        BusInterface& operator=(BusInterface&&) = delete;
 
-        virtual ~ComsInterface() = default;
+        virtual ~BusInterface() = default;
 
         //! Start the coms interface
         virtual bool open();
 
         //! Stop the interface
         virtual bool stop();
+
+        //! Register a motor with the interface
+        virtual bool register_motor(const std::shared_ptr<Motor> &motor);
 
         //! Set the duty cycle of the motor controller. The duty cycle is a value between -1 and 1.
         virtual void setDuty(uint8_t controller_id, float duty);
@@ -80,9 +89,12 @@ namespace multivesc
         void setVerbose(bool verbose) { mVerbose = verbose; }
 
         //! Get motor object by id
-        std::shared_ptr<Motor> getMotor(uint8_t id);
+        [[nodiscard]] std::shared_ptr<Motor> getMotor(uint8_t id);
 
     protected:
+        //! Do update
+        virtual void update();
+
         //! Callback function for status packets.
         void statusCallback(uint8_t controllerId, float erpm, float current, float dutyCycle);
 
@@ -104,6 +116,8 @@ namespace multivesc
         std::mutex mMutex; // Mutex for accessing the motor map
         std::vector<std::shared_ptr<Motor>> mMotors = std::vector<std::shared_ptr<Motor>>(256); // Map from motor id to motor object
         bool mVerbose = false;
+
+        friend class Manager;
     };
 
 } // multivesc

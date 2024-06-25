@@ -7,12 +7,13 @@
 
 #include <atomic>
 #include <string>
-#include "multivesc/ComsInterface.hh"
+#include "multivesc/BusInterface.hh"
 
 namespace multivesc {
 
     class Manager;
 
+    //! List of motor sensor value types
     enum class MotorValuesT
     {
         RPM,
@@ -34,6 +35,7 @@ namespace multivesc {
         PPM
     };
 
+    //! Drive modes for the motor controller
     enum class MotorDriveT
     {
         NONE,
@@ -48,20 +50,33 @@ namespace multivesc {
         HAND_BRAKE_REL
     };
 
+    //! Convert a MotorDriveT to a string
+    std::string to_string(MotorDriveT type);
+
+    //! Convert a string to a MotorDriveT
+    //! If the string is not recognized, MotorDriveT::NONE is returned.
+    MotorDriveT driveTypeFromString(const std::string& str);
+
+    //! Motor interface
 
     class Motor
+        : public std::enable_shared_from_this<Motor>
     {
     public:
         Motor() = default;
 
-        //! Constructor
-        explicit Motor(std::shared_ptr<ComsInterface> coms, uint8_t id = 0);
+        //! Construct a named motor
+        explicit Motor(std::string name);
 
         //! Disable copy and move constructors
         Motor(const Motor&) = delete;
         Motor& operator=(const Motor&) = delete;
         Motor(Motor&&) = delete;
         Motor& operator=(Motor&&) = delete;
+
+        //! Configure the motor from a json object.
+        //! This will register the motor with the manager and set up the motor parameters.
+        bool configure(Manager &manager,json config);
 
         //! Set the name of the motor.
         void setName(const std::string& name);
@@ -110,11 +125,11 @@ namespace multivesc {
         //! Set handbrake current in Amps as a percentage of the maximum current.
         void setHandbrakeRel(float current_rel);
 
-        //! Access motor id
+        //! Access motor id as used on the bus
         [[nodiscard]] uint8_t id() const { return mId; }
 
         //! Access motor speed in RPM
-        [[nodiscard]] float rpm() const { return mERpm; }
+        [[nodiscard]] float rpm() const { return mERpm / mNumPolePairs; }
 
         //! Access motor current in Amps
         [[nodiscard]] float current() const { return mECurrent; }
@@ -193,29 +208,33 @@ namespace multivesc {
         //! Update RPM
         void updateRPM(float rpm);
 
-        std::shared_ptr<ComsInterface> mComs;
+        std::shared_ptr<BusInterface> mComs;
         std::string mName;
         std::mutex mMutex;
         std::function<void(MotorValuesT,float)> mCallback;
 
         // Drive mode
         std::mutex mDriveMutex;
+        bool mEnabled = true;
+        std::atomic<bool> mVerbose = false;
+        std::atomic<float> mNumPolePairs = 1.0f;
+        MotorDriveT mPrimaryDriveMode = MotorDriveT::NONE;
         MotorDriveT mDriveMode = MotorDriveT::NONE;
-        float mDriveValue = 0.0;
-        float mLastDriveValue = 0.0;
+        float mDriveValue = 0.0f;
+        float mLastDriveValue = 0.0f;
         std::chrono::steady_clock::time_point mDriveUpdateTime;
         std::chrono::steady_clock::duration mDriveTimeout = std::chrono::milliseconds(200);
 
         uint8_t mId = 0; // Controller ID
 
-        std::atomic<float> mMinRPM = 5000.0;
-        std::atomic<float> mMaxRPMAcceleration = -1.0; //! In RPM per second, negative values disable acceleration limiting.
+        std::atomic<float> mMinRPM = 5000.0f;
+        std::atomic<float> mMaxRPMAcceleration = -1.0f; //! In RPM per second, negative values disable acceleration limiting.
         std::chrono::steady_clock::time_point mLastRPMDemandChange;
-        float mLastRPMDemand = 0.0;
+        float mLastRPMDemand = 0.0f;
 
         // Sensor values
-        std::atomic<float> mERpm = 0.0;
-        std::atomic<float> mECurrent = 0.0;
+        std::atomic<float> mERpm = 0.0f;
+        std::atomic<float> mECurrent = 0.0f;
         std::atomic<float> mDuty = 0.0;
         std::atomic<float> mAmpHours = 0.0;
         std::atomic<float> mAmpHoursCharged = 0.0;
@@ -232,7 +251,7 @@ namespace multivesc {
         std::atomic<float> mADC3 = 0.0;
         std::atomic<float> mPPM = 0.0;
 
-        friend class ComsInterface;
+        friend class BusInterface;
         friend class Manager;
     };
 

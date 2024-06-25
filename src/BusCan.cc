@@ -10,7 +10,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <linux/can/raw.h>
-#include "multivesc/ComsCan.hh"
+#include "multivesc/BusCan.hh"
 
 namespace multivesc
 {
@@ -46,21 +46,27 @@ namespace multivesc
     }
 
 
-    ComsCan::ComsCan(std::string deviceName)
+    BusCan::BusCan(std::string deviceName)
      : mDeviceName(std::move(deviceName))
     {
 
     }
 
+    BusCan::BusCan(json config)
+     : BusInterface(config)
+    {
+        mDeviceName = config.value("device", "");
+    }
+
     //! Destructor
-    ComsCan::~ComsCan()
+    BusCan::~BusCan()
     {
         stop();
     }
 
     //! Open the CAN interface.
 
-    bool ComsCan::open()
+    bool BusCan::open()
     {
         // Check it is not already open
         if(mSocket >= 0) {
@@ -89,13 +95,13 @@ namespace multivesc
             return false;
         }
 
-        mReceiveThread = std::thread(&ComsCan::run_receive_thread, this);
+        mReceiveThread = std::thread(&BusCan::run_receive_thread, this);
 
         return true;
     }
 
     //! Stop the CAN interface and close the socket.
-    bool ComsCan::stop()
+    bool BusCan::stop()
     {
         mTerminate = true;
         if(mReceiveThread.joinable())
@@ -111,7 +117,7 @@ namespace multivesc
 
     // Implementation for sending extended ID CAN-frames
 
-    void ComsCan::can_transmit_eid(uint32_t id, const uint8_t *data, uint8_t len)
+    void BusCan::can_transmit_eid(uint32_t id, const uint8_t *data, uint8_t len)
     {
         struct can_frame frame;
         frame.can_id = id | CAN_EFF_FLAG;
@@ -121,7 +127,7 @@ namespace multivesc
     }
 
 
-    void ComsCan::setDuty(uint8_t controller_id, float duty)
+    void BusCan::setDuty(uint8_t controller_id, float duty)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -130,7 +136,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_DUTY << 8), buffer, send_index);
     }
 
-    void ComsCan::setCurrent(uint8_t controller_id, float current)
+    void BusCan::setCurrent(uint8_t controller_id, float current)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -139,7 +145,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_CURRENT << 8), buffer, send_index);
     }
 
-    void ComsCan::setCurrentOffDelay(uint8_t controller_id, float current, float off_delay)
+    void BusCan::setCurrentOffDelay(uint8_t controller_id, float current, float off_delay)
     {
         int32_t send_index = 0;
         uint8_t buffer[6];
@@ -149,7 +155,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_CURRENT << 8), buffer, send_index);
     }
 
-    void ComsCan::setCurrentBrake(uint8_t controller_id, float current) {
+    void BusCan::setCurrentBrake(uint8_t controller_id, float current) {
         int32_t send_index = 0;
         uint8_t buffer[4];
         buffer_append_int32(buffer, (int32_t) (current * 1000.0), &send_index);
@@ -157,7 +163,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_CURRENT_BRAKE << 8), buffer, send_index);
     }
 
-    void ComsCan::setRPM(uint8_t controller_id, float rpm)
+    void BusCan::setRPM(uint8_t controller_id, float rpm)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -166,7 +172,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_RPM << 8), buffer, send_index);
     }
 
-    void ComsCan::setPos(uint8_t controller_id, float pos)
+    void BusCan::setPos(uint8_t controller_id, float pos)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -175,7 +181,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_POS << 8), buffer, send_index);
     }
 
-    void ComsCan::setCurrentRel(uint8_t controller_id, float current_rel)
+    void BusCan::setCurrentRel(uint8_t controller_id, float current_rel)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -187,7 +193,7 @@ namespace multivesc
     /**
      * Same as above, but also sets the off delay. Note that this command uses 6 bytes now. The off delay is useful to set to keep the current controller running for a while even after setting currents below the minimum current.
      */
-    void ComsCan::setCurrentRelOffDelay(uint8_t controller_id, float current_rel, float off_delay)
+    void BusCan::setCurrentRelOffDelay(uint8_t controller_id, float current_rel, float off_delay)
     {
         int32_t send_index = 0;
         uint8_t buffer[6];
@@ -197,7 +203,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_CURRENT_REL << 8), buffer, send_index);
     }
 
-    void ComsCan::setCurrentBrakeRel(uint8_t controller_id, float current_rel)
+    void BusCan::setCurrentBrakeRel(uint8_t controller_id, float current_rel)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -206,7 +212,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_CURRENT_BRAKE_REL << 8), buffer, send_index);
     }
 
-    void ComsCan::setHandbrake(uint8_t controller_id, float current)
+    void BusCan::setHandbrake(uint8_t controller_id, float current)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -215,7 +221,7 @@ namespace multivesc
                          ((uint32_t) CAN_PACKET_SET_CURRENT_HANDBRAKE << 8), buffer, send_index);
     }
 
-    void ComsCan::setHandbrakeRel(uint8_t controller_id, float current_rel)
+    void BusCan::setHandbrakeRel(uint8_t controller_id, float current_rel)
     {
         int32_t send_index = 0;
         uint8_t buffer[4];
@@ -227,7 +233,7 @@ namespace multivesc
 
     //! Wait for data on the socket
     //! @return True if data is available, false if timeout.
-    bool ComsCan::wait_for_data(float timeoutSeconds)
+    bool BusCan::wait_for_data(float timeoutSeconds)
     {
         fd_set readfds;
         FD_ZERO(&readfds);
@@ -242,7 +248,7 @@ namespace multivesc
 
 
     //! Read packets from the CAN interface and call the appropriate callback functions.
-    void ComsCan::run_receive_thread()
+    void BusCan::run_receive_thread()
     {
         struct can_frame frame;
 
@@ -268,7 +274,7 @@ namespace multivesc
         }
     }
 
-    void ComsCan::decode(const can_frame &frame)
+    void BusCan::decode(const can_frame &frame)
     {
         uint8_t controllerId = frame.can_id & 0xFF;
         uint16_t packetType = (frame.can_id >> 8) & 0xFFFF;

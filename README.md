@@ -1,19 +1,18 @@
 
 # Mutli-Vesc
 
-API for driving multiple VESC motor controllers over CAN.  It is assumed that the motors are configure with the
+API for driving multiple VESC motor controllers over CAN on linux.  It is assumed that the motors are configure with the
 vesc tool.   Though the code currently only supports CAN, serial support could be added in the future.
 
 This code is for use with controllers based on the VESC project: https://vesc-project.com/
 
-
-This code has been tested with [FLIPSKY Mini FSESC6.7](https://flipsky.net/collections/v6-series/products/flipsky-mini-fsesc6-7-pro-70a-base-on-vesc6-6-with-aluminum-anodized-heat-sink)
+It has been tested with [FLIPSKY Mini FSESC6.7](https://flipsky.net/collections/v6-series/products/flipsky-mini-fsesc6-7-pro-70a-base-on-vesc6-6-with-aluminum-anodized-heat-sink)
 
 # Installation
 
 Building on Ubuntu 24.04:
 
-    sudo apt install nlohmann-json3-dev cmake ninja build-essential can-utils
+    sudo apt install nlohmann-json3-dev cmake ninja-build build-essential can-utils pybind11-dev python3-dev pybind11-json-dev
     mkdir build
     cd build
     cmake .. 
@@ -54,17 +53,27 @@ The code can be run with the following command:
 Following is an example of the json  config file should be in the following format:
 
     {
+        "buses": {
+            "can0": {
+              "type": "can",
+              "device": "can0"
+            }
+        },
         "motors": {
             "motor1": {
               "id": 88,
+              "bus":"can0",
               "enable": true,
+              "controlMode": "rpm",
               "rpm": 10000,
+              "numPoles": 14,
               "maxRPMAcceleration": 1000,
               "minRPM": 2000,
               "startDelay": 0.2
             },
             "motor2": {
                 "id": 122
+                "bus":"can0",
                 "enable": false,
             }
         }
@@ -74,7 +83,9 @@ For each motor the following parameters can be set:
 
 * id: The CAN id of the motor
 * enable: If the motor is enabled
-* One of the following types of drive values
+* numPoles: The number of poles of the motor. Used to calculate the RPM from the ERPM
+* controlMode: The control mode of the motor
+* One of the following types of drive values, depending on the 'controlMode':
   * rpm: The target RPM of the motor
   * current: The target current of the motor in Amps
   * duty: The target duty cycle of the motor. 0.0 to 1.0

@@ -2,50 +2,31 @@
 // Created by charles on 17/06/24.
 //
 
-#ifndef MUTLIVESC_COMSCAN_HH
-#define MUTLIVESC_COMSCAN_HH
+#ifndef MUTLIVESC_COMSSERIAL_HH
+#define MUTLIVESC_COMSSERIAL_HH
 
+#include <vector>
 #include <string>
 #include <cstdint>
-#include <thread>
-#include <atomic>
-#include <linux/can.h>
-#include "multivesc/ComsInterface.hh"
+
+#include "multivesc/BusInterface.hh"
+
 
 namespace multivesc {
 
-    // This file is based on examples given in: https://github.com/vedderb/bldc/blob/master/documentation/comm_can.md
-
-    typedef enum {
-        CAN_PACKET_SET_DUTY = 0,
-        CAN_PACKET_SET_CURRENT,
-        CAN_PACKET_SET_CURRENT_BRAKE,
-        CAN_PACKET_SET_RPM,
-        CAN_PACKET_SET_POS,
-        CAN_PACKET_STATUS = 9,
-        CAN_PACKET_SET_CURRENT_REL = 10,
-        CAN_PACKET_SET_CURRENT_BRAKE_REL,
-        CAN_PACKET_SET_CURRENT_HANDBRAKE,
-        CAN_PACKET_SET_CURRENT_HANDBRAKE_REL,
-        CAN_PACKET_STATUS_2 = 14,
-        CAN_PACKET_STATUS_3 = 15,
-        CAN_PACKET_STATUS_4 = 16,
-        CAN_PACKET_STATUS_5 = 27,
-        CAN_PACKET_STATUS_6 = 28
-    } CAN_PACKET_ID;
-
-
-    //! Low level can coms class for the VESC motor controller.
-    //! This class is designed to be stateless and only contains the necessary functions to send commands to the motor controller.
-
-    class ComsCan
-      : public ComsInterface
+    //! Serial interface to communicate with the VESC
+    class BusSerial
+       : public BusInterface
     {
     public:
-        explicit ComsCan(std::string deviceName);
+        //! Const from port
+        explicit BusSerial(std::string port);
+
+        //! Const from port
+        explicit BusSerial(json config);
 
         //! Destructor
-        virtual ~ComsCan();
+        ~BusSerial() override;
 
         //! Open the CAN interface.
         bool open() override;
@@ -86,25 +67,14 @@ namespace multivesc {
         //! Set handbrake current in Amps as a percentage of the maximum current.
         void setHandbrakeRel(uint8_t controller_id, float current_rel) override;
 
-    private:
-        void can_transmit_eid(uint32_t id, const uint8_t *data, uint8_t len);
-
-        //! Read packets from the CAN interface and call the appropriate callback functions.
-        void run_receive_thread();
-
-        //! Wait for data on the socket
-        //! @return True if data is available, false if timeout.
-        bool wait_for_data(float timeoutSeconds);
-
-        //! Decode a CAN frame and call the appropriate callback functions.
-        void decode(const struct can_frame &frame);
-
-        std::string mDeviceName;
-        int mSocket = -1;
-        std::atomic_bool mTerminate = false;
+    protected:
+        std::string mPort;
         std::thread mReceiveThread;
+
+        int mFd = -1;
     };
 
-} // multivesc
+}
 
-#endif //MUTLIVESC_COMSCAN_HH
+
+#endif //MUTLIVESC_COMSSERIAL_HH

@@ -5,8 +5,10 @@
 #ifndef MULTI_VESC_MANAGER_HH
 #define MULTI_VESC_MANAGER_HH
 
-#include <multivesc/ComsInterface.hh>
-#include <multivesc/Motor.hh>
+#include <map>
+#include <nlohmann/json.hpp>
+#include "multivesc/BusInterface.hh"
+#include "multivesc/Motor.hh"
 
 namespace multivesc {
 
@@ -27,16 +29,23 @@ namespace multivesc {
         Manager& operator=(Manager&&) = delete;
 
         //! Constructor
-        explicit Manager(std::shared_ptr<ComsInterface> coms);
+        explicit Manager(json config);
 
         //! Destructor
         virtual ~Manager();
 
+        //! Load configuration from a json object
+        bool configure(json config);
+
         //! Open a CAN port
         bool openCan(const std::string& port);
 
-        //! Find a motor by id
-        [[nodiscard]] std::shared_ptr<Motor> getMotor(uint8_t id);
+        //! Find bus
+        [[nodiscard]] std::shared_ptr<BusInterface> getBus(const std::string& name);
+
+        //! Find a motor by name
+        //! Returns nullptr if the motor is not found
+        [[nodiscard]] std::shared_ptr<Motor> getMotor(const std::string& name);
 
         //! Start the manager
         bool start();
@@ -51,16 +60,26 @@ namespace multivesc {
         //! Get verbose output
         [[nodiscard]] bool verbose() const
         { return mVerbose; }
+
+        //! Get all motors
+        [[nodiscard]] std::vector<std::shared_ptr<Motor>> motors() const;
+
     protected:
+        //! Add a motor to the manager
+        bool register_motor(Motor &motor);
+
+        //! Update thread
         void runUpdate();
 
         std::atomic<bool> mTerminate = false;
         bool mVerbose = false;
         std::thread mUpdateThread;
-        std::mutex mMutex;
+        mutable std::mutex mMutex;
 
-        std::shared_ptr<ComsInterface> mPrimaryComs;
-        std::vector<std::shared_ptr<Motor>> mMotors = std::vector<std::shared_ptr<Motor>>(256);
+        std::map<std::string, std::shared_ptr<BusInterface>> mBusMap;
+        std::vector<std::shared_ptr<Motor>> mMotors;
+
+        friend class Motor;
     };
 
 } // multivesc

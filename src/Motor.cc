@@ -59,7 +59,7 @@ namespace multivesc {
         setName(config.value("name", defaultName));
         setMaxRPMAcceleration(config.value("maxRPMAcceleration",-1.0f));
         setMinRPM(config.value("minRPM",0.0f));
-        mNumPollPairs = config.value("numPolls",1.0f) / 2.0f;
+        mNumPolePairs = config.value("numPoles",1.0f) / 2.0f;
         if(!mComs->register_motor(shared_from_this())) {
             return false;
         }
@@ -351,7 +351,7 @@ namespace multivesc {
         }
         mLastRPMDemandChange = now;
         mLastRPMDemand = rpm;
-        mComs->setRPM(mId, rpm * mNumPollPairs);
+        mComs->setRPM(mId, rpm * mNumPolePairs);
     }
 
     void Motor::setPos(float pos)

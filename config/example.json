@@ -11,7 +11,7 @@
       "id": 88,
       "enable": true,
       "rpm": 10000,
-      "numPolls": 14,
+      "numPoles": 14,
       "maxRPMAcceleration": 1000,
       "minRPM": 2000,
       "controlMode": "rpm",

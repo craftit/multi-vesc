@@ -64,7 +64,9 @@ Following is an example of the json  config file should be in the following form
               "id": 88,
               "bus":"can0",
               "enable": true,
+              "controlMode": "rpm",
               "rpm": 10000,
+              "numPoles": 14,
               "maxRPMAcceleration": 1000,
               "minRPM": 2000,
               "startDelay": 0.2
@@ -81,7 +83,8 @@ For each motor the following parameters can be set:
 
 * id: The CAN id of the motor
 * enable: If the motor is enabled
-* One of the following types of drive values
+* controlMode: The control mode of the motor
+* One of the following types of drive values, depending on the 'controlMode':
   * rpm: The target RPM of the motor
   * current: The target current of the motor in Amps
   * duty: The target duty cycle of the motor. 0.0 to 1.0

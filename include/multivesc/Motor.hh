@@ -121,7 +121,7 @@ namespace multivesc {
         [[nodiscard]] uint8_t id() const { return mId; }
 
         //! Access motor speed in RPM
-        [[nodiscard]] float rpm() const { return mERpm / mNumPollPairs; }
+        [[nodiscard]] float rpm() const { return mERpm / mNumPolePairs; }
 
         //! Access motor current in Amps
         [[nodiscard]] float current() const { return mECurrent; }
@@ -208,7 +208,7 @@ namespace multivesc {
         // Drive mode
         std::mutex mDriveMutex;
         bool mEnabled = true;
-        std::atomic<float> mNumPollPairs = 1.0f;
+        std::atomic<float> mNumPolePairs = 1.0f;
         MotorDriveT mPrimaryDriveMode = MotorDriveT::NONE;
         MotorDriveT mDriveMode = MotorDriveT::NONE;
         float mDriveValue = 0.0f;

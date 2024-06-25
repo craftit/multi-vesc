@@ -13,6 +13,11 @@ namespace multivesc
     ComsInterface::ComsInterface()
     = default;
 
+    ComsInterface::ComsInterface(const json &config)
+        : mVerbose(config.value("verbose",false))
+    {
+    }
+
 
     bool ComsInterface::open()
     {
@@ -25,6 +30,18 @@ namespace multivesc
         return true;
     }
 
+    bool ComsInterface::register_motor(const std::shared_ptr<Motor> &motor)
+    {
+        std::lock_guard lock(mMutex);
+        size_t id = motor->id();
+        if(id >= mMotors.size()) {
+            std::cerr << "Motor id out of range. " << id << " >= " << mMotors.size() << std::endl;
+            return false;
+        }
+        mMotors[id] = motor;
+        return true;
+    }
+
     //! Get motor object by id
     std::shared_ptr<Motor> ComsInterface::getMotor(uint8_t id)
     {
@@ -33,6 +50,16 @@ namespace multivesc
             mMotors[id] = std::make_shared<Motor>();
         }
         return mMotors[id];
+    }
+
+    void ComsInterface::update()
+    {
+        for(auto& motor : mMotors)
+        {
+            if(motor == nullptr)
+                continue;
+            motor->update();
+        }
     }
 
 

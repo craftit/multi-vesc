@@ -20,9 +20,13 @@ namespace multivesc {
     {
     public:
         //! Const from port
-        ComsSerial(std::string port);
+        explicit ComsSerial(std::string port);
 
-        ~ComsSerial();
+        //! Const from port
+        explicit ComsSerial(json config);
+
+        //! Destructor
+        ~ComsSerial() override;
 
         //! Open the CAN interface.
         bool open() override;
@@ -62,7 +66,6 @@ namespace multivesc {
 
         //! Set handbrake current in Amps as a percentage of the maximum current.
         void setHandbrakeRel(uint8_t controller_id, float current_rel) override;
-
 
     protected:
         std::string mPort;

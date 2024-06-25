@@ -53,9 +53,16 @@ The code can be run with the following command:
 Following is an example of the json  config file should be in the following format:
 
     {
+        "buses": {
+            "can0": {
+              "type": "can",
+              "device": "can0"
+            }
+        },
         "motors": {
             "motor1": {
               "id": 88,
+              "bus":"can0",
               "enable": true,
               "rpm": 10000,
               "maxRPMAcceleration": 1000,
@@ -64,6 +71,7 @@ Following is an example of the json  config file should be in the following form
             },
             "motor2": {
                 "id": 122
+                "bus":"can0",
                 "enable": false,
             }
         }

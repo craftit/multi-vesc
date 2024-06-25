@@ -52,6 +52,12 @@ namespace multivesc
 
     }
 
+    ComsCan::ComsCan(json config)
+     : ComsInterface(config)
+    {
+        mDeviceName = config.value("device", "");
+    }
+
     //! Destructor
     ComsCan::~ComsCan()
     {

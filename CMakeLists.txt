@@ -17,12 +17,13 @@ add_library(multivesc STATIC
 set_target_properties(multivesc PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(multivesc PUBLIC cxx_std_17)
 target_include_directories(multivesc PUBLIC include)
+target_link_libraries(multivesc PUBLIC nlohmann_json::nlohmann_json)
 
 # Build the executable
 add_executable(vesc_run
         src/run_vesc.cc
 )
-target_link_libraries(vesc_run PUBLIC multivesc nlohmann_json::nlohmann_json)
+target_link_libraries(vesc_run PUBLIC multivesc )
 
 
 pybind11_add_module(pymultivesc src/python.cc)

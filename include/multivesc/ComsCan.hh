@@ -10,6 +10,7 @@
 #include <thread>
 #include <atomic>
 #include <linux/can.h>
+#include <nlohmann/json.hpp>
 #include "multivesc/ComsInterface.hh"
 
 namespace multivesc {
@@ -43,6 +44,9 @@ namespace multivesc {
     {
     public:
         explicit ComsCan(std::string deviceName);
+
+        //! Construct from config
+        explicit ComsCan(json config);
 
         //! Destructor
         virtual ~ComsCan();

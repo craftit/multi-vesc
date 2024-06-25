@@ -6,16 +6,117 @@
 #include <utility>
 
 #include "multivesc/Motor.hh"
+#include "multivesc/Manager.hh"
 
 namespace multivesc {
 
-    Motor::Motor(std::shared_ptr<ComsInterface> coms, uint8_t id)
-    : mComs(std::move(coms)),
-      mId(id)
+    std::string to_string(MotorDriveT type)
     {
-        auto now = std::chrono::steady_clock::now();
-        mDriveUpdateTime = now;
-        mLastRPMDemandChange = now;
+        switch (type)
+        {
+            case MotorDriveT::NONE: return "NONE";
+            case MotorDriveT::DUTY: return "DUTY";
+            case MotorDriveT::CURRENT: return "CURRENT";
+            case MotorDriveT::CURRENT_REL: return "CURRENT_REL";
+            case MotorDriveT::CURRENT_BREAK: return "CURRENT_BREAK";
+            case MotorDriveT::CURRENT_BREAK_REL: return "CURRENT_BREAK_REL";
+            case MotorDriveT::RPM: return "RPM";
+            case MotorDriveT::POS: return "POS";
+            case MotorDriveT::HAND_BRAKE: return "HAND_BRAKE";
+            case MotorDriveT::HAND_BRAKE_REL: return "HAND_BRAKE_REL";
+        }
+        return "UNKNOWN";
+    }
+
+    MotorDriveT driveTypeFromString(const std::string& str)
+    {
+        for(int i = 0; i < (int)MotorDriveT::HAND_BRAKE_REL; i++)
+        {
+            if(str == to_string((MotorDriveT)i))
+            {
+                return (MotorDriveT)i;
+            }
+        }
+        return MotorDriveT::NONE;
+    }
+
+
+    Motor::Motor(std::string name)
+     : mName(std::move(name))
+    {}
+
+    bool Motor::configure(Manager &manager, json config)
+    {
+        std::string busName = config.value("bus","can0");
+        mComs = manager.getBus(busName);
+        if(mComs == nullptr) {
+            std::cerr << "Failed to find bus " << busName << std::endl;
+            return false;
+        }
+        mId = config.value("id", 0);
+        mEnabled = config.value("enabled", true);
+        std::string defaultName = "motor_" + busName + "_" + std::to_string(mId);
+        setName(config.value("name", defaultName));
+        setMaxRPMAcceleration(config.value("maxRPMAcceleration",-1.0f));
+        setMinRPM(config.value("minRPM",0.0f));
+        mNumPollPairs = config.value("numPolls",1.0f) / 2.0f;
+        if(!mComs->register_motor(shared_from_this())) {
+            return false;
+        }
+
+        std::string controlMode = config.value("controlMode","RPM");
+        mPrimaryDriveMode = driveTypeFromString(controlMode);
+        if(mPrimaryDriveMode == MotorDriveT::NONE) {
+            std::cerr << "Invalid control mode " << controlMode << std::endl;
+            return false;
+        }
+        mDriveMode = MotorDriveT::NONE;
+
+        manager.register_motor(*this);
+
+        // Only do initial setup if motor enabled
+        if(mEnabled) {
+            // Pause a little before sending the first command
+            float startupDelay = config.value("startupDelay",0.0f);
+            if(startupDelay > 0.0) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(int(startupDelay * 1000.0f)));
+            }
+
+            switch(mPrimaryDriveMode)
+            {
+                case MotorDriveT::NONE:
+                    break;
+                case MotorDriveT::DUTY:
+                    if(config.contains("duty")) {
+                        setDuty(config["duty"]);
+                    }
+                break;
+                case MotorDriveT::CURRENT:
+                    if(config.contains("current")) {
+                        setCurrent(config["current"]);
+                    }
+                break;
+                case MotorDriveT::CURRENT_REL:
+                case MotorDriveT::CURRENT_BREAK:
+                case MotorDriveT::CURRENT_BREAK_REL:
+                    break;
+                case MotorDriveT::RPM:
+                    if(config.contains("rpm")) {
+                        setCurrent(config["rpm"]);
+                    }
+                break;
+                case MotorDriveT::POS:
+                    if(config.contains("pos")) {
+                        setPos(config["pos"]);
+                    }
+                break;
+                case MotorDriveT::HAND_BRAKE:
+                case MotorDriveT::HAND_BRAKE_REL:
+                    break;
+            }
+        }
+
+        return true;
     }
 
     void Motor::setName(const std::string &name)
@@ -41,6 +142,9 @@ namespace multivesc {
         std::lock_guard lock(mDriveMutex);
         auto now = std::chrono::steady_clock::now();
         mDriveUpdateTime = now;
+        if(!mEnabled) {
+            return;
+        }
         switch(mDriveMode)
         {
             case MotorDriveT::NONE:
@@ -143,8 +247,14 @@ namespace multivesc {
             duty = 1.0;
         }
         std::lock_guard lock(mDriveMutex);
-        mDriveUpdateTime = std::chrono::steady_clock::now();
+        if(!mEnabled)
+            return;
+        if(mPrimaryDriveMode != MotorDriveT::DUTY) {
+            std::cerr << "Motor " << mName << " is not in duty mode" << std::endl;
+            return;
+        }
         mDriveMode = MotorDriveT::DUTY;
+        mDriveUpdateTime = std::chrono::steady_clock::now();
         mDriveValue = duty;
         if(!mComs)
             return ;
@@ -154,8 +264,14 @@ namespace multivesc {
     void Motor::setCurrent(float current)
     {
         std::lock_guard lock(mDriveMutex);
-        mDriveUpdateTime = std::chrono::steady_clock::now();
+        if(!mEnabled)
+            return;
+        if(mPrimaryDriveMode != MotorDriveT::CURRENT) {
+            std::cerr << "Motor " << mName << " is not in current mode" << std::endl;
+            return;
+        }
         mDriveMode = MotorDriveT::CURRENT;
+        mDriveUpdateTime = std::chrono::steady_clock::now();
         mDriveValue = current;
         if(!mComs)
             return ;
@@ -165,8 +281,14 @@ namespace multivesc {
     void Motor::setCurrentOffDelay(float current, float off_delay)
     {
         std::lock_guard lock(mDriveMutex);
-        mDriveUpdateTime = std::chrono::steady_clock::now();
+        if(!mEnabled)
+            return;
+        if(mPrimaryDriveMode != MotorDriveT::CURRENT) {
+            std::cerr << "Motor " << mName << " is not in current mode" << std::endl;
+            return;
+        }
         mDriveMode = MotorDriveT::CURRENT;
+        mDriveUpdateTime = std::chrono::steady_clock::now();
         mDriveValue = current;
         if(!mComs)
             return ;
@@ -176,8 +298,10 @@ namespace multivesc {
     void Motor::setCurrentBrake(float current)
     {
         std::lock_guard lock(mDriveMutex);
-        mDriveUpdateTime = std::chrono::steady_clock::now();
+        if(!mEnabled)
+            return;
         mDriveMode = MotorDriveT::CURRENT_BREAK;
+        mDriveUpdateTime = std::chrono::steady_clock::now();
         mDriveValue = current;
         if(!mComs)
             return ;
@@ -187,7 +311,13 @@ namespace multivesc {
     void Motor::setRPM(float rpm)
     {
         std::lock_guard lock(mDriveMutex);
+        if(!mEnabled)
+            return;
         mDriveUpdateTime = std::chrono::steady_clock::now();
+        if(mPrimaryDriveMode != MotorDriveT::RPM) {
+            std::cerr << "Motor " << mName << " is not in RPM mode" << std::endl;
+            return;
+        }
         mDriveMode = MotorDriveT::RPM;
         mDriveValue = rpm;
         if(!mComs)
@@ -221,17 +351,22 @@ namespace multivesc {
         }
         mLastRPMDemandChange = now;
         mLastRPMDemand = rpm;
-        mComs->setRPM(mId, rpm);
+        mComs->setRPM(mId, rpm * mNumPollPairs);
     }
-
 
     void Motor::setPos(float pos)
     {
         if(!mComs)
             return ;
         std::lock_guard lock(mDriveMutex);
-        mDriveUpdateTime = std::chrono::steady_clock::now();
+        if(!mEnabled)
+            return;
+        if(mPrimaryDriveMode != MotorDriveT::POS) {
+            std::cerr << "Motor " << mName << " is not in position mode" << std::endl;
+            return;
+        }
         mDriveMode = MotorDriveT::POS;
+        mDriveUpdateTime = std::chrono::steady_clock::now();
         mDriveValue = pos;
         mComs->setPos(mId, pos);
     }
@@ -239,6 +374,12 @@ namespace multivesc {
     void Motor::setCurrentRel(float current_rel)
     {
         std::lock_guard lock(mDriveMutex);
+        if(!mEnabled)
+            return;
+        if(mPrimaryDriveMode != MotorDriveT::CURRENT_REL) {
+            std::cerr << "Motor " << mName << " is not in current relative mode" << std::endl;
+            return;
+        }
         mDriveUpdateTime = std::chrono::steady_clock::now();
         mDriveMode = MotorDriveT::CURRENT_REL;
         mDriveValue = current_rel;
@@ -250,6 +391,12 @@ namespace multivesc {
     void Motor::setCurrentRelOffDelay(float current_rel, float off_delay)
     {
         std::lock_guard lock(mDriveMutex);
+        if(!mEnabled)
+            return;
+        if(mPrimaryDriveMode != MotorDriveT::CURRENT_REL) {
+            std::cerr << "Motor " << mName << " is not in current relative mode" << std::endl;
+            return;
+        }
         mDriveUpdateTime = std::chrono::steady_clock::now();
         mDriveMode = MotorDriveT::CURRENT_REL;
         mDriveValue = current_rel;
@@ -261,6 +408,8 @@ namespace multivesc {
     void Motor::setCurrentBrakeRel(float current_rel)
     {
         std::lock_guard lock(mDriveMutex);
+        if(!mEnabled)
+            return;
         mDriveUpdateTime = std::chrono::steady_clock::now();
         mDriveMode = MotorDriveT::CURRENT_BREAK_REL;
         mDriveValue = current_rel;
@@ -272,6 +421,8 @@ namespace multivesc {
     void Motor::setHandbrake(float current)
     {
         std::lock_guard lock(mDriveMutex);
+        if(!mEnabled)
+            return;
         mDriveUpdateTime = std::chrono::steady_clock::now();
         mDriveMode = MotorDriveT::HAND_BRAKE;
         mDriveValue = current;
@@ -283,6 +434,8 @@ namespace multivesc {
     void Motor::setHandbrakeRel(float current_rel)
     {
         std::lock_guard lock(mDriveMutex);
+        if(!mEnabled)
+            return;
         mDriveUpdateTime = std::chrono::steady_clock::now();
         mDriveMode = MotorDriveT::HAND_BRAKE_REL;
         mDriveValue = current_rel;

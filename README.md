@@ -10,13 +10,18 @@ It has been tested with [FLIPSKY Mini FSESC6.7](https://flipsky.net/collections/
 
 # Installation
 
-Building on Ubuntu 24.04:
+Building C++ on Ubuntu 22.04 or later:
 
     sudo apt install nlohmann-json3-dev cmake ninja-build build-essential can-utils pybind11-dev python3-dev pybind11-json-dev
     mkdir build
     cd build
     cmake .. 
     make
+
+To install the python bindings goto the root of the project and run:
+
+    pip install .
+
 
 # Protocol
 
@@ -48,7 +53,7 @@ the following commands:
 
 The code can be run with the following command:
 
-    ./multi_vesc -c ./config/example.json -d can0
+    ./multi_vesc -c ./config/example.json 
 
 Following is an example of the json  config file should be in the following format:
 

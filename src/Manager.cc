@@ -94,5 +94,16 @@ namespace multivesc
         return mMotors[id];
     }
 
-
+    std::shared_ptr<Motor> Manager::getMotorByName(const std::string &name)
+    {
+        std::lock_guard lock(mMutex);
+        for(auto &motor : mMotors)
+        {
+            if(motor && motor->name() == name)
+            {
+                return motor;
+            }
+        }
+        return {};
+    }
 } // multivesc

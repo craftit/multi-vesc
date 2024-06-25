@@ -38,6 +38,10 @@ namespace multivesc {
         //! Find a motor by id
         [[nodiscard]] std::shared_ptr<Motor> getMotor(uint8_t id);
 
+        //! Find a motor by name
+        //! Returns nullptr if the motor is not found
+        [[nodiscard]] std::shared_ptr<Motor> getMotorByName(const std::string& name);
+
         //! Start the manager
         bool start();
 

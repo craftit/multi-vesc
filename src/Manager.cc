@@ -4,8 +4,8 @@
 
 #include <iostream>
 #include "multivesc/Manager.hh"
-#include "multivesc/ComsCan.hh"
-#include "multivesc/ComsSerial.hh"
+#include "multivesc/BusCan.hh"
+#include "multivesc/BusSerial.hh"
 
 namespace multivesc
 {
@@ -29,13 +29,13 @@ namespace multivesc
         {
             auto entry = item.value();
             auto busType = entry["type"].get<std::string>();
-            std::shared_ptr<ComsInterface> bus;
+            std::shared_ptr<BusInterface> bus;
             if(busType == "can")
             {
-                bus = std::make_shared<ComsCan>(entry);
+                bus = std::make_shared<BusCan>(entry);
             } else if(busType == "serial")
             {
-                bus = std::make_shared<ComsSerial>(entry);
+                bus = std::make_shared<BusSerial>(entry);
             }
             else
             {
@@ -60,7 +60,7 @@ namespace multivesc
 
     bool Manager::openCan(const std::string& port)
     {
-        auto bus = std::make_shared<ComsCan>(port);
+        auto bus = std::make_shared<BusCan>(port);
         bus->setVerbose(mVerbose);
         if(!bus->open()) {
             return false;
@@ -70,7 +70,7 @@ namespace multivesc
         return true;
     }
 
-    std::shared_ptr<ComsInterface> Manager::getBus(const std::string &name)
+    std::shared_ptr<BusInterface> Manager::getBus(const std::string &name)
     {
         std::lock_guard lock(mMutex);
         auto iter = mBusMap.find(name);

@@ -6,11 +6,11 @@ find_package(nlohmann_json REQUIRED)
 find_package(pybind11 CONFIG)
 
 add_library(multivesc STATIC
-        src/ComsInterface.cc include/multivesc/ComsInterface.hh
+        src/BusInterface.cc include/multivesc/BusInterface.hh
         src/Manager.cc include/multivesc/Manager.hh
-        src/ComsSerial.cc include/multivesc/ComsSerial.hh
+        src/BusSerial.cc include/multivesc/BusSerial.hh
         src/Motor.cc include/multivesc/Motor.hh
-        src/ComsCan.cc include/multivesc/ComsCan.hh
+        src/BusCan.cc include/multivesc/BusCan.hh
 )
 
 # Make code relocatable

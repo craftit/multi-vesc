@@ -7,7 +7,7 @@
 
 #include <map>
 #include <nlohmann/json.hpp>
-#include "multivesc/ComsInterface.hh"
+#include "multivesc/BusInterface.hh"
 #include "multivesc/Motor.hh"
 
 namespace multivesc {
@@ -41,7 +41,7 @@ namespace multivesc {
         bool openCan(const std::string& port);
 
         //! Find bus
-        [[nodiscard]] std::shared_ptr<ComsInterface> getBus(const std::string& name);
+        [[nodiscard]] std::shared_ptr<BusInterface> getBus(const std::string& name);
 
         //! Find a motor by name
         //! Returns nullptr if the motor is not found
@@ -76,7 +76,7 @@ namespace multivesc {
         std::thread mUpdateThread;
         mutable std::mutex mMutex;
 
-        std::map<std::string, std::shared_ptr<ComsInterface>> mBusMap;
+        std::map<std::string, std::shared_ptr<BusInterface>> mBusMap;
         std::vector<std::shared_ptr<Motor>> mMotors;
 
         friend class Motor;

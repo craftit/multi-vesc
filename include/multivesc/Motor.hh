@@ -7,7 +7,7 @@
 
 #include <atomic>
 #include <string>
-#include "multivesc/ComsInterface.hh"
+#include "multivesc/BusInterface.hh"
 
 namespace multivesc {
 
@@ -200,7 +200,7 @@ namespace multivesc {
         //! Update RPM
         void updateRPM(float rpm);
 
-        std::shared_ptr<ComsInterface> mComs;
+        std::shared_ptr<BusInterface> mComs;
         std::string mName;
         std::mutex mMutex;
         std::function<void(MotorValuesT,float)> mCallback;
@@ -242,7 +242,7 @@ namespace multivesc {
         std::atomic<float> mADC3 = 0.0;
         std::atomic<float> mPPM = 0.0;
 
-        friend class ComsInterface;
+        friend class BusInterface;
         friend class Manager;
     };
 

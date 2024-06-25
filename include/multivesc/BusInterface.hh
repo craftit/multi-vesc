@@ -23,22 +23,22 @@ namespace multivesc
     //! Abstract class for communicating with the VESC
     //! The implementation deal with can bus and serial communication
     //!
-    class ComsInterface
+    class BusInterface
     {
     public:
         //! Constructor
-        ComsInterface();
+        BusInterface();
 
         //! Constructor
-        explicit ComsInterface(const json &config);
+        explicit BusInterface(const json &config);
 
         //! Disable copy and move constructors
-        ComsInterface(const ComsInterface&) = delete;
-        ComsInterface& operator=(const ComsInterface&) = delete;
-        ComsInterface(ComsInterface&&) = delete;
-        ComsInterface& operator=(ComsInterface&&) = delete;
+        BusInterface(const BusInterface&) = delete;
+        BusInterface& operator=(const BusInterface&) = delete;
+        BusInterface(BusInterface&&) = delete;
+        BusInterface& operator=(BusInterface&&) = delete;
 
-        virtual ~ComsInterface() = default;
+        virtual ~BusInterface() = default;
 
         //! Start the coms interface
         virtual bool open();

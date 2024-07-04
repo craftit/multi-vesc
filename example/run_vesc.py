@@ -11,7 +11,7 @@ manager = vesc.Manager(config)
 atom1 = manager.motor("atomiser1")
 
 print("Setting RPM to 1000")
-atom1.set_rpm(12000)
+atom1.set_rpm(1000)
 
 print("Done")
 

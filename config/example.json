@@ -10,7 +10,7 @@
     "atomiser1": {
       "verbose": false,
       "bus": "can",
-      "id": 88,
+      "id": 122,
       "enable": true,
       "rpm": 0,
       "numPoles": 14,
@@ -21,7 +21,7 @@
     },
     "pump": {
       "bus": "can",
-      "id": 122,
+      "id": 105,
       "enable": false,
       "controlMode": "duty",
       "duty": 0

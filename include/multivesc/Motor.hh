@@ -88,6 +88,10 @@ namespace multivesc {
         //! This is required for sensorless operation.
         void setMinRPM(float rpm);
 
+        //! Set the maximum RPM for the motor.
+        //! This is required for sensorless operation.
+        void setMaxRPM(float rpm);
+
         //! Set the maximum RPM acceleration for the motor.
         //! The acceleration is in RPM per second. Negative values disable acceleration limiting.
         void setMaxRPMAcceleration(float rpm_per_sec);
@@ -124,6 +128,9 @@ namespace multivesc {
 
         //! Set handbrake current in Amps as a percentage of the maximum current.
         void setHandbrakeRel(float current_rel);
+
+        //! Get the RPM maximum limit
+        [[nodiscard]] float maxRPM() const { return mMaxRPM; }
 
         //! Access motor id as used on the bus
         [[nodiscard]] uint8_t id() const { return mId; }
@@ -228,6 +235,7 @@ namespace multivesc {
         uint8_t mId = 0; // Controller ID
 
         std::atomic<float> mMinRPM = 5000.0f;
+        std::atomic<float> mMaxRPM = 12000.0f;
         std::atomic<float> mMaxRPMAcceleration = -1.0f; //! In RPM per second, negative values disable acceleration limiting.
         std::chrono::steady_clock::time_point mLastRPMDemandChange;
         float mLastRPMDemand = 0.0f;

@@ -353,6 +353,14 @@ namespace multivesc {
         std::lock_guard lock(mDriveMutex);
         if(!mEnabled)
             return;
+        if(std::abs(rpm) > mMaxRPM) {
+            std::cerr << "RPM " << rpm << " exceeds maximum RPM " << mMaxRPM << " Limiting to max of " << mMaxRPM << std::endl;
+            if(rpm > 0) {
+                rpm = mMaxRPM;
+            } else {
+                rpm = -mMaxRPM;
+            }
+        }
         mDriveUpdateTime = std::chrono::steady_clock::now();
         if(mPrimaryDriveMode != MotorDriveT::RPM) {
             std::cerr << "Motor " << mName << " is not in RPM mode" << std::endl;
@@ -386,6 +394,14 @@ namespace multivesc {
                 if (std::abs(rpm) < mMinRPM) {
                     rpm = std::abs(mMinRPM);
                 }
+            }
+
+            // Limit the maximum RPM
+            if (std::abs(rpm) > mMaxRPM) {
+                if(rpm > 0)
+                    rpm = mMaxRPM;
+                else
+                    rpm = -mMaxRPM;
             }
             //std::cout << " Update delta " << dtf << " RPM:" << rpm << " "<< std::endl;
         }
@@ -487,6 +503,11 @@ namespace multivesc {
     void Motor::setMinRPM(float rpm)
     {
         mMinRPM = rpm;
+    }
+
+    void Motor::setMaxRPM(float rpm)
+    {
+        mMaxRPM = rpm;
     }
 
     void Motor::setMaxRPMAcceleration(float rpm_per_sec)

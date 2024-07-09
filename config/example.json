@@ -16,6 +16,7 @@
       "numPoles": 14,
       "maxRPMAcceleration": 1000,
       "minRPM": 1000,
+      "maxRPM": 10000,
       "controlMode": "rpm",
       "startDelay": 0.2
     },

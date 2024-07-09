@@ -225,6 +225,7 @@ namespace multivesc {
         bool mEnabled = true;
         std::atomic<bool> mVerbose = false;
         std::atomic<float> mNumPolePairs = 1.0f;
+        std::atomic<float> mScaleDirection = 1.0f;
         MotorDriveT mPrimaryDriveMode = MotorDriveT::NONE;
         MotorDriveT mDriveMode = MotorDriveT::NONE;
         float mDriveValue = 0.0f;

@@ -76,6 +76,8 @@ namespace multivesc {
         setMinRPM(config.value("minRPM",0.0f));
         setMaxRPM(config.value("maxRPM",12000));
         mNumPolePairs = config.value("numPoles",1.0f) / 2.0f;
+        if(config.value("reverse_direction",false))
+            mScaleDirection = mScaleDirection * -1.0;
 
         if(mVerbose) {
             std::cout << " Min RPM: " << mMinRPM << "   Max RPM Acceleration: " << mMaxRPMAcceleration << std::endl;
@@ -191,19 +193,19 @@ namespace multivesc {
             case MotorDriveT::NONE:
                 break;
             case MotorDriveT::DUTY:
-                mComs->setDuty(mId, mDriveValue);
+                mComs->setDuty(mId, mDriveValue * mScaleDirection);
                 break;
             case MotorDriveT::CURRENT:
-                mComs->setCurrent(mId,mDriveValue);
+                mComs->setCurrent(mId, mDriveValue * mScaleDirection);
                 break;
             case MotorDriveT::RPM:
                 updateRPM(mDriveValue);
                 break;
             case MotorDriveT::POS:
-                mComs->setPos(mId,mDriveValue);
+                mComs->setPos(mId,mDriveValue * mScaleDirection);
                 break;
             case MotorDriveT::CURRENT_REL:
-                mComs->setCurrentRel(mId,mDriveValue);
+                mComs->setCurrentRel(mId,mDriveValue * mScaleDirection);
                 break;
             case MotorDriveT::CURRENT_BREAK:
                 mComs->setCurrentBrake(mId,mDriveValue);
@@ -282,6 +284,7 @@ namespace multivesc {
 
     void Motor::setDuty(float duty)
     {
+        duty *= mScaleDirection;
         if(duty < -1.0) {
             duty = -1.0;
         } else if(duty > 1.0) {
@@ -299,7 +302,7 @@ namespace multivesc {
         mDriveValue = duty;
         if(!mComs)
             return ;
-        mComs->setDuty(mId, duty);
+        mComs->setDuty(mId, duty * mScaleDirection);
     }
 
     void Motor::setCurrent(float current)
@@ -316,7 +319,7 @@ namespace multivesc {
         mDriveValue = current;
         if(!mComs)
             return ;
-        mComs->setCurrent(mId, current);
+        mComs->setCurrent(mId, current * mScaleDirection);
     }
 
     void Motor::setCurrentOffDelay(float current, float off_delay)
@@ -333,7 +336,7 @@ namespace multivesc {
         mDriveValue = current;
         if(!mComs)
             return ;
-        mComs->setCurrentOffDelay(mId, current, off_delay);
+        mComs->setCurrentOffDelay(mId, current * mScaleDirection, off_delay);
     }
 
     void Motor::setCurrentBrake(float current)
@@ -410,7 +413,7 @@ namespace multivesc {
 
         mLastRPMDemandChange = now;
         mLastRPMDemand = rpm;
-        mComs->setRPM(mId, rpm * mNumPolePairs);
+        mComs->setRPM(mId, rpm * mNumPolePairs * mScaleDirection);
     }
 
     void Motor::setPos(float pos)
@@ -427,7 +430,7 @@ namespace multivesc {
         mDriveMode = MotorDriveT::POS;
         mDriveUpdateTime = std::chrono::steady_clock::now();
         mDriveValue = pos;
-        mComs->setPos(mId, pos);
+        mComs->setPos(mId, pos * mScaleDirection);
     }
 
     void Motor::setCurrentRel(float current_rel)
@@ -444,7 +447,7 @@ namespace multivesc {
         mDriveValue = current_rel;
         if(!mComs)
             return ;
-        mComs->setCurrentRel(mId, current_rel);
+        mComs->setCurrentRel(mId, current_rel  * mScaleDirection);
     }
 
     void Motor::setCurrentRelOffDelay(float current_rel, float off_delay)
@@ -461,7 +464,7 @@ namespace multivesc {
         mDriveValue = current_rel;
         if(!mComs)
             return ;
-        mComs->setCurrentRelOffDelay(mId, current_rel, off_delay);
+        mComs->setCurrentRelOffDelay(mId, current_rel  * mScaleDirection, off_delay);
     }
 
     void Motor::setCurrentBrakeRel(float current_rel)

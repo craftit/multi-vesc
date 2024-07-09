@@ -74,6 +74,7 @@ namespace multivesc {
         }
         setMaxRPMAcceleration(config.value("maxRPMAcceleration",-1.0f));
         setMinRPM(config.value("minRPM",0.0f));
+        setMaxRPM(config.value("maxRPM",12000));
         mNumPolePairs = config.value("numPoles",1.0f) / 2.0f;
 
         if(mVerbose) {
@@ -376,6 +377,15 @@ namespace multivesc {
     void Motor::updateRPM(float rpm)
     {
         auto now = std::chrono::steady_clock::now();
+        // Make sure we start at the minimum RPM, needed for sensor-less operation
+        if (std::abs(rpm) < mMinRPM) {
+            // If less than half the minimum RPM, set to zero
+            if(std::abs(rpm) < mMinRPM/2) {
+                rpm = 0.0;
+            } else {
+                rpm = std::abs(mMinRPM);
+            }
+        }
         if(mMaxRPMAcceleration >= 0.0) {
             auto dt = now - mLastRPMDemandChange;
             // Convert dt to floating point seconds
@@ -389,22 +399,15 @@ namespace multivesc {
                     rpm = mLastRPMDemand - maxDeltaRPM;
                 }
             }
-            // Make sure we start at the minimum RPM, needed for senseless operation
-            if (std::abs(rpm) > 0.0) {
-                if (std::abs(rpm) < mMinRPM) {
-                    rpm = std::abs(mMinRPM);
-                }
-            }
-
-            // Limit the maximum RPM
-            if (std::abs(rpm) > mMaxRPM) {
-                if(rpm > 0)
-                    rpm = mMaxRPM;
-                else
-                    rpm = -mMaxRPM;
-            }
-            //std::cout << " Update delta " << dtf << " RPM:" << rpm << " "<< std::endl;
         }
+        // Limit the maximum RPM
+        if (std::abs(rpm) > mMaxRPM) {
+            if(rpm > 0)
+                rpm = mMaxRPM;
+            else
+                rpm = -mMaxRPM;
+        }
+
         mLastRPMDemandChange = now;
         mLastRPMDemand = rpm;
         mComs->setRPM(mId, rpm * mNumPolePairs);
